@@ -13,19 +13,19 @@ export default function Listresponsable() {
 
     const handleDelete = async (numResponsable) => {
         try {
-            await axios.delete(`http://localhost:8000/ajoutresponsable/${numResponsable}`);
+            await axios.delete(`http://localhost:5000/api/responsables/${numResponsable}`);
             window.location.reload();
         } catch (err) {
             console.log(err);
         }
     }
 
+    // Récupérer tous les responsables au chargement du composant
     useEffect(() => {
-        axios.get('http://localhost:8000/listresponsable')
+        axios.get('http://localhost:5000/api/responsables') // Assurez-vous que l'URL correspond à votre route
             .then(res => setResponsable(res.data))
             .catch(err => console.log(err));
     }, []);
-    
 
     const filteredResponsable = responsable.filter((data) => {
         return (

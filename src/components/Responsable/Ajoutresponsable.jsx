@@ -15,12 +15,14 @@ export default function Ajoutresponsable() {
 
     function handleSubmit(event) {
         event.preventDefault();
-        axios.post('http://localhost:8000/ajoutresponsable', formState)
+        axios.post('http://localhost:5000/api/responsables', formState)
             .then(res => {
                 console.log(res);
-                setShowDialog(true);
-                // Réinitialiser le formulaire
-                navigate('/listclient');
+                setShowDialog(true); // Afficher le modal de confirmation
+                // Rediriger vers la liste des clients après l'ajout
+                setTimeout(() => {
+                    navigate('/listresponsable');
+                }, 2000); // Délais de 2 secondes pour montrer le message
             })
             .catch(err => console.log(err));
     }

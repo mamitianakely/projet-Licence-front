@@ -12,6 +12,10 @@ export default function Updatedemande() {
     const { numDemande } = useParams();  // Récupère numDemande à partir de l'URL
     const navigate = useNavigate();
 
+
+    const formatDate = (dateString) => {
+        return new Date(dateString).toLocaleDateString(); // Format par défaut : 'MM/DD/YYYY'
+    };
     // Fonction pour charger les données de la demande existante
     useEffect(() => {
         if (!numDemande) {
@@ -20,13 +24,13 @@ export default function Updatedemande() {
         }
 
         // Appel à l'API pour récupérer les données
-        axios.get(`http://localhost:8000/updatedemande/${numDemande}`)
+        axios.get(`http://localhost:5000/api/demandes/${numDemande}`)
             .then(res => {
                 if (res.data.length === 0) {
                     setError("Aucune demande trouvée avec ce numéro.");
                 } else {
-                    const data = res.data[0];
-                    setDateDemande(data.dateDemande);
+                    const data = res.data;
+                    setDateDemande(formatDate(data.dateDemande));
                     setTypeDemande(data.typeDemande);
                     setLongueur(data.longueur);
                     setLargeur(data.largeur);
@@ -47,7 +51,7 @@ export default function Updatedemande() {
             return;
         }
 
-        axios.put(`http://localhost:8000/updatedemande/${numDemande}`, {
+        axios.put(`http://localhost:5000/api/demandes/${numDemande}`, {
             dateDemande,
             typeDemande,
             longueur,
@@ -73,7 +77,7 @@ export default function Updatedemande() {
 
                         <div className="mb-2">
                             <label htmlFor="">Date de la demande : </label>
-                            <input type=" text" className="form-control" value={dateDemande} onChange={e => setDateDemande(e.target.value)} />
+                            <input type="text" className="form-control" value={dateDemande} onChange={e => setDateDemande(e.target.value)} />
                         </div>
 
                         <div className="mb-2">

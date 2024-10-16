@@ -6,22 +6,25 @@ export default function Updateresponsable() {
     const [nomResponsable, setNomResponsable] = useState('');
     const [motDePasse, setMotDePasse] = useState('');
 
-    const { numResponsable } = useParams('');
-    const navigate = useNavigate('');
+    const { numResponsable } = useParams();
+    const navigate = useNavigate();
 
     useEffect(() => {
-        axios.get(`http://localhost:8000/updateresponsable/${numResponsable}`)
+        axios.get(`http://localhost:5000/api/responsables/${numResponsable}`)
             .then(res => {
-                const data = res.data[0];
-                setNomResponsable(data.nomResponsable);
-                setMotDePasse(data.motDePasse);
+                const data = res.data;
+                if (data) {
+                    // Assurez-vous que les champs sont bien définis
+                    setNomResponsable(data.nomResponsable || '');
+                    setMotDePasse(data.motDePasse || '');
+                }
             })
             .catch(err => console.log(err));
     }, [numResponsable]);
 
     function handleSubmit(event) {
         event.preventDefault();
-        axios.put(`http://localhost:8000/updateresponsable/${numResponsable}`, {
+        axios.put(`http://localhost:5000/api/responsables/${numResponsable}`, {
             nomResponsable,
             motDePasse
         })
