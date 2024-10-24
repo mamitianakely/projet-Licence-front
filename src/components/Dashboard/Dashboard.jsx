@@ -9,7 +9,7 @@ const Dashboard = ({ children }) => {
   const toggleSidebar = () => setSidebarOpen(!sidebarOpen);
 
   const navItems = [
-    { path: '/', icon: Home, label: 'Tableau de bord' },
+    { path: '/dash', icon: Home, label: 'Tableau de bord' },
     { path: '/listdemande', icon: FileText, label: 'Demande' },
     { path: '/listclient', icon: Users, label: 'Client' },
     { path: '/listdevis', icon: FileSignature, label: 'Devis' },

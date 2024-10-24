@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import axios from 'axios';
 import Dashboard from "../Dashboard/Dashboard";
-import { Trash, Circle, CheckCircle } from 'lucide-react';
+import { Trash, Circle, CheckCircle, FileText } from 'lucide-react';
 
 export default function Listavis() {
     const [avis, setAvis] = useState([]);
@@ -45,6 +45,29 @@ export default function Listavis() {
             );
         } catch (err) {
             console.error("Erreur lors de la mise à jour de l'état :", err);
+        }
+    };
+
+    const handleDownloadPdf = async (numAvis) => {
+        try {
+            const response = await axios.get(`http://localhost:5000/api/avis/pdf/${numAvis}`, {
+                responseType: 'blob', // Important pour les fichiers PDF
+            });
+    
+            if (response.status === 200) {
+                const url = window.URL.createObjectURL(new Blob([response.data]));
+                const link = document.createElement('a');
+                link.href = url;
+                link.setAttribute('download', `avis-${numAvis}.pdf`);
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            } else {
+                console.error('Erreur lors du téléchargement du PDF:', response);
+            }
+        } catch (err) {
+            console.error('Erreur lors du téléchargement du PDF:', err);
+            alert('Impossible de télécharger le PDF. Veuillez réessayer plus tard.');
         }
     };
 
@@ -109,6 +132,9 @@ export default function Listavis() {
                                                 <CheckCircle className="mr-1" /> Payé
                                             </button>
                                         )}
+                                        <button className="flex items-center bg-green-500 text-white px-2 py-1 rounded hover:bg-green-600" onClick={() => handleDownloadPdf(data.numAvis)}>
+                                            <FileText className="mr-1" />
+                                        </button>
                                     </div>
                                 </td>
                             </tr>

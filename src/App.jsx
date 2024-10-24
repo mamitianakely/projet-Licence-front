@@ -19,6 +19,7 @@ import Dashboard from './components/Dashboard/Dashboard';
 import Listdevis from './components/Devis/Listdevis';
 import Listavis from './components/Avispaiement/Listavis';
 import Listpermis from './components/Permis/Listpermis';
+import Dash from './components/Dash/Dash';
 
 function App() {
   return (
@@ -41,6 +42,7 @@ function App() {
             <Route path="/listdevis" element={<Listdevis />} />
             <Route path="/listavis" element={<Listavis />} />
             <Route path="/listpermis" element={<Listpermis />} />
+            <Route path="/dash" element={<Dash />} />
         </Routes>
       </BrowserRouter>
     </div>
