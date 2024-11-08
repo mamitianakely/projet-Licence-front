@@ -15,18 +15,22 @@ import Updateverificateur from './components/Verificateur/Updateverificateur';
 import Ajoutdemande from './components/Demande/Ajoutdemande';
 import Listdemande from './components/Demande/Listdemande';
 import Updatedemande from './components/Demande/Updatedemande';
-import Dashboard from './components/Dashboard/Dashboard';
+//import Dashboard from './components/Dashboard/Dashboard';//
 import Listdevis from './components/Devis/Listdevis';
 import Listavis from './components/Avispaiement/Listavis';
 import Listpermis from './components/Permis/Listpermis';
 import Dash from './components/Dash/Dash';
+import Login from './components/Login/Login';
+import Register from './components/Login/Register';
+import ProtectedRoute from './components/Login/ProtectedRoute';
 
 function App() {
   return (
     <div className="App">
       <BrowserRouter>
         <Routes>
-            <Route path='/' element={<Dashboard />}></Route>
+            <Route path='/' element={<Login />}></Route>
+            <Route path='/register' element={<Register />}></Route>
             <Route path='/client' element={<Client />}></Route>
             <Route path='/listclient' element={<Listclient />}></Route>
             <Route path='/updateclient/:numChrono' element={<UpdateClient />}></Route>
@@ -43,7 +47,13 @@ function App() {
             <Route path="/listavis" element={<Listavis />} />
             <Route path="/listpermis" element={<Listpermis />} />
             <Route path="/dash" element={<Dash />} />
+            
+            <Route path="/login" element={<Login />} />
+            <Route element={<ProtectedRoute />}>
+                <Route path="/dash" element={<Dash />} />
+            </Route>
         </Routes>
+        
       </BrowserRouter>
     </div>
   );

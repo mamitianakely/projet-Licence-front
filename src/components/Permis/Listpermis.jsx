@@ -1,11 +1,16 @@
 import React, { useEffect, useState } from "react";
 import axios from 'axios';
 import Dashboard from "../Dashboard/Dashboard";
-import { Trash, FileText } from 'lucide-react';
+import { Trash, FileText, Search } from 'lucide-react';
 
 export default function Listpermis() {
     const [permis, setPermis] = useState([]);
     const [searchTerm, setSearchTerm] = useState('');
+    const [startDate, setStartDate] = useState('');
+    const [endDate, setEndDate] = useState('');
+
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 10;
 
     useEffect(() => {
         const fetchPermis = async () => {
@@ -16,11 +21,31 @@ export default function Listpermis() {
                 console.log(err);
             }
         };
+
         fetchPermis();
     }, []);
 
     const handleSearch = (event) => {
         setSearchTerm(event.target.value.toLowerCase());
+    };
+
+    const handleDateSearch = async () => {
+        // Vérifie que les deux dates sont présentes
+        if (!startDate || !endDate) {
+            alert("Veuillez sélectionner les dates de début et de fin.");
+            return;
+        }
+
+        try {
+            // Requête pour rechercher les permis entre les deux dates
+            const response = await axios.get(`http://localhost:5000/api/permis/search`, {
+                params: { startDate, endDate }
+            });
+            setPermis(response.data);
+        } catch (err) {
+            console.log(err);
+            alert("Erreur lors de la recherche des permis.");
+        }
     };
 
     const handleDelete = async (numPermis) => {
@@ -38,7 +63,7 @@ export default function Listpermis() {
             const response = await axios.get(`http://localhost:5000/api/permis/pdf/${numPermis}`, {
                 responseType: 'blob', // Important pour les fichiers PDF
             });
-    
+
             if (response.status === 200) {
                 const url = window.URL.createObjectURL(new Blob([response.data]));
                 const link = document.createElement('a');
@@ -55,7 +80,7 @@ export default function Listpermis() {
             alert('Impossible de télécharger le PDF. Veuillez réessayer plus tard.');
         }
     };
-    
+
 
     /*const handleEtatChange = async (numAvis) => {
         try {
@@ -93,6 +118,17 @@ export default function Listpermis() {
         return new Date(dateString).toLocaleDateString(); // Format par défaut : 'MM/DD/YYYY'
     };
 
+    const indexOfLastItem = currentPage * itemsPerPage;
+    const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+    const currentPermis = filteredPermis.slice(indexOfFirstItem, indexOfLastItem);
+
+    const paginate = (pageNumber) => setCurrentPage(pageNumber);
+
+    const pageNumbers = [];
+    for (let i = 1; i <= Math.ceil(filteredPermis.length / itemsPerPage); i++) {
+        pageNumbers.push(i);
+    }
+
     return (
 
         <div className="min-h-screen bg-gray-100">
@@ -104,6 +140,13 @@ export default function Listpermis() {
                                 className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" />
                         </form>
                         {/* <button className="ml-4 px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600" onClick={openAddModal}>AJOUTER</button> */}
+                    </div>
+                    <div className="flex space-x-2">
+                        <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                        <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                        <button onClick={handleDateSearch} className="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-blue-600">
+                            <Search className="text-black-500 " size={20} />
+                        </button>
                     </div>
                 </div>
 
@@ -121,7 +164,7 @@ export default function Listpermis() {
                         </tr>
                     </thead>
                     <tbody>
-                        {Array.isArray(permis) && filteredPermis.map((data, i) => (
+                        {Array.isArray(currentPermis) && currentPermis.map((data, i) => (
                             <tr key={i} className="border-t">
                                 <td className="py-3 px-6 text-left">{data.numPermis}</td>
                                 <td className="py-3 px-6 text-left">{data.nomClient}</td>
@@ -145,6 +188,15 @@ export default function Listpermis() {
                     </tbody>
 
                 </table>
+
+                
+                <div className="flex mt-4">
+                    {pageNumbers.map((number) => (
+                        <button key={number} onClick={() => paginate(number)} className={`mx-1 px-3 py-1 rounded ${currentPage === number ? 'bg-blue-500 text-white' : 'bg-gray-300 text-black'}`}>
+                            {number}
+                        </button>
+                    ))}
+                </div>
             </Dashboard>
         </div>
     );

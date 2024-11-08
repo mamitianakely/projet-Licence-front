@@ -16,6 +16,8 @@ export default function Listclient() {
         contact: ''
     })
 
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 10;
 
     const openAddModal = () => {
         setFormState({
@@ -96,6 +98,17 @@ export default function Listclient() {
         );
     });
 
+    const indexOfLastItem = currentPage * itemsPerPage;
+    const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+    const currentClients = filteredClient.slice(indexOfFirstItem, indexOfLastItem);
+
+    const paginate = (pageNumber) => setCurrentPage(pageNumber);
+
+    const pageNumbers = [];
+    for (let i = 1; i <= Math.ceil(filteredClient.length / itemsPerPage); i++) {
+        pageNumbers.push(i);
+    }
+
     return (
         <div className="min-h-screen bg-gray-100">
             <Dashboard>
@@ -122,7 +135,7 @@ export default function Listclient() {
                             </tr>
                         </thead>
                         <tbody className="text-gray-600 text-sm">
-                            {Array.isArray(client) && filteredClient.map((data, i) => (
+                            {Array.isArray(currentClients) && currentClients.map((data, i)  => (
                                 <tr key={i} className="border-b border-gray-200 hover:bg-gray-100">
                                     <td className="py-3 px-6 text-left">{data.numChrono}</td>
                                     <td className="py-3 px-6 text-left">{data.nomClient}</td>
@@ -142,14 +155,18 @@ export default function Listclient() {
                             ))}
                         </tbody>
                     </table>
+                    <div className="flex mt-4">
+                        {pageNumbers.map((number) => (
+                            <button key={number} onClick={() => paginate(number)} className={`mx-1 px-3 py-1 rounded ${currentPage === number ? 'bg-blue-500 text-white' : 'bg-gray-300 text-black'}`}>
+                                {number}
+                            </button>
+                        ))}
+                    </div>
                     {/* Modal for adding verificateur*/}
-                    <Modal isOpen={addModalIsOpen} onRequestClose={closeModal}>
+                    <Modal isOpen={addModalIsOpen} onRequestClose={closeModal} className="fixed inset-0 flex justify-center items-center z-50">
+                    <div className="max-w-2xl w-full p-6 bg-white rounded-lg shadow-lg">
                         <h2 className="text-2xl font-bold mb-4">NOUVEAU CLIENT</h2>
                         <form onSubmit={handleAddSubmit}>
-                            <div className="mb-2">
-                                <label htmlFor="">Numero chronologique du client : </label>
-                                <input type="text" className="w-full p-2 border border-gray-300 rounded" onChange={e => setFormState({ ...formState, numChrono: e.target.value })} required />
-                            </div>
 
                             <div className="mb-2">
                                 <label htmlFor="">Nom du client : </label>
@@ -174,9 +191,12 @@ export default function Listclient() {
                                 Annuler
                             </button>
                         </form>
+                        </div>
                     </Modal>
+
                     {/* Modal for editing verificateur */}
-                    <Modal isOpen={editModalIsOpen} onRequestClose={closeModal}>
+                    <Modal isOpen={editModalIsOpen} onRequestClose={closeModal} className="fixed inset-0 flex justify-center items-center z-50">
+                    <div className="max-w-2xl w-full p-6 bg-white rounded-lg shadow-lg">
                         <h2 className="text-2xl font-bold mb-4">MODIFIER UN CLIENT</h2>
                         <form onSubmit={handleEditSubmit}>
                             <div className="mb-2">
@@ -199,6 +219,7 @@ export default function Listclient() {
                             <button type="submit" className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">ENREGISTRER</button>
                             <button type="button" className="ml-2 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600" onClick={closeModal}>Annuler</button>
                         </form>
+                        </div>
                     </Modal>
                 </div>
             </Dashboard>

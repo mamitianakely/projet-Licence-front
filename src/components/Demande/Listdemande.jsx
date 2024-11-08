@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import axios from 'axios';
 import Modal from 'react-modal';
 import Dashboard from '../Dashboard/Dashboard';
-import { Pencil, Trash, Check } from 'lucide-react';
+import { Pencil, Trash, Check, Search } from 'lucide-react';
 
 export default function Listdemande() {
     const [demande, setDemande] = useState([]);
@@ -16,6 +16,30 @@ export default function Listdemande() {
     const [montant, setMontant] = useState(0);
     const [isDevisSubmitted, setIsDevisSubmitted] = useState(false);
     // const [numDevis, setNumDevis] = useState(0);
+
+    const [startDate, setStartDate] = useState('');
+    const [endDate, setEndDate] = useState('');
+
+
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 10;
+
+    const [isDevisCreated, setIsDevisCreated] = useState(() => {
+        // Charger l'état depuis localStorage si disponible
+        const savedState = localStorage.getItem('isDevisCreated');
+        return savedState ? JSON.parse(savedState) : false;
+    });
+
+    const [isAvisCreated, setIsAvisCreated] = useState(() => {
+        const savedState = localStorage.getItem('isAvisCreated');
+        return savedState ? JSON.parse(savedState) : false;
+    });
+
+    // Enregistrer l'état dans localStorage lorsque l'état change
+    useEffect(() => {
+        localStorage.setItem('isDevisCreated', JSON.stringify(isDevisCreated));
+        localStorage.setItem('isAvisCreated', JSON.stringify(isAvisCreated));
+    }, [isDevisCreated, isAvisCreated]);
 
     const [formState, setFormState] = useState({
         numDemande: '',
@@ -60,11 +84,32 @@ export default function Listdemande() {
                 console.log(err);
             }
         };
+        // fetch nom client
         fetchDemandes();
     }, []);
 
     const handleSearch = (event) => {
         setSearchTerm(event.target.value.toLowerCase());
+    };
+
+
+    const handleDateSearch = async () => {
+        // Vérifie que les deux dates sont présentes
+        if (!startDate || !endDate) {
+            alert("Veuillez sélectionner les dates de début et de fin.");
+            return;
+        }
+
+        try {
+            // Requête pour rechercher les permis entre les deux dates
+            const response = await axios.get(`http://localhost:5000/api/demandes/searchDateDemands`, {
+                params: { startDate, endDate }
+            });
+            setDemande(response.data);
+        } catch (err) {
+            console.log(err);
+            alert("Erreur lors de la recherche des demandes.");
+        }
     };
 
     const handleDelete = async (numDemande) => {
@@ -115,13 +160,19 @@ export default function Listdemande() {
     const handleAddSubmit = async (event) => {
         event.preventDefault();
         try {
+            // Ajout de la demande
             const response = await axios.post('http://localhost:5000/api/demandes', formState);
-            setDemande([...demande, response.data]);
+
+            // Récupération des demandes avec le nomClient
+            const demandeResponse = await axios.get('http://localhost:5000/api/demandes');
+            setDemande(demandeResponse.data); // Mettre à jour l'état avec les nouvelles données
+
             closeModal();
         } catch (err) {
             console.error(err);
         }
     };
+
 
     const handleEditSubmit = async (event) => {
         event.preventDefault();
@@ -146,7 +197,22 @@ export default function Listdemande() {
         return new Date(dateString).toLocaleDateString(); // Format par défaut : 'MM/DD/YYYY'
     };
 
+    const indexOfLastItem = currentPage * itemsPerPage;
+    const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+    const currentDemandes = filteredDemande.slice(indexOfFirstItem, indexOfLastItem);
 
+    const paginate = (pageNumber) => setCurrentPage(pageNumber);
+
+    const pageNumbers = [];
+    for (let i = 1; i <= Math.ceil(filteredDemande.length / itemsPerPage); i++) {
+        pageNumbers.push(i);
+    }
+
+    // Fonction pour réinitialiser les états
+    const resetFormStates = () => {
+        setIsDevisCreated(false);
+        setIsAvisCreated(false);
+    };
 
     const handleDevisSubmit = async (e, selectedDemande) => {
         e.preventDefault();
@@ -176,7 +242,8 @@ export default function Listdemande() {
             if (!response.ok) {
                 throw new Error('Erreur lors de l\'enregistrement du devis');
             }
-            setIsDevisSubmitted(true); // Enable 'Avis de Paiement' tab
+            setIsDevisCreated(true);
+            setIsAvisCreated(false); // Reset isAvisCreated when a new devis is created
             handleTabClick('avis');
             // closeModal();
         } catch (error) {
@@ -208,12 +275,17 @@ export default function Listdemande() {
                 throw new Error('Erreur lors de l\'enregistrement de l\'avis de paiement');
             }
 
-            // Fermez le modal ou effectuez d'autres actions après la soumission
-            closeModal();
+            setIsAvisCreated(true);
+            closeModal(); // Fermer le modal après la soumission de l'avis
         } catch (error) {
             console.error('Erreur:', error);
         }
     };
+
+
+
+    // Désactiver le bouton "Check" si devis et avis ont été créés
+    const isCheckButtonDisabled = isDevisCreated && isAvisCreated;
 
     return (
 
@@ -226,6 +298,13 @@ export default function Listdemande() {
                                 className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" />
                         </form>
                         <button className="ml-4 px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600" onClick={openAddModal}>AJOUTER</button>
+                    </div>
+                    <div className="flex space-x-2">
+                        <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                        <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                        <button onClick={handleDateSearch} className="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-blue-600">
+                            <Search className="text-black-500 " size={20} />
+                        </button>
                     </div>
                 </div>
 
@@ -244,38 +323,47 @@ export default function Listdemande() {
                         </tr>
                     </thead>
                     <tbody>
-                        {Array.isArray(demande) &&
-                            filteredDemande.map((data, i) => (
-                                <tr key={i} className="border-t">
-                                    <td className="py-3 px-6 text-left">{data.numDemande}</td>
-                                    <td className="py-3 px-6 text-left">{data.nomClient}</td>
-                                    <td className="py-3 px-6 text-left">{formatDate(data.dateDemande)}</td>
-                                    <td className="py-3 px-6 text-left">{data.typeDemande}</td>
-                                    <td className="py-3 px-6 text-left">{data.longueur}</td>
-                                    <td className="py-3 px-6 text-left">{data.largeur}</td>
-                                    <td className="py-3 px-6 text-left">{data.lieu}</td>
-                                    <td className="py-3 px-6 text-left">
-                                        <div className="flex space-x-2"> {/* Conteneur flex avec espacement */}
-                                            <button className="flex items-center bg-blue-500 text-white px-2 py-1 rounded hover:bg-blue-600" onClick={() => openEditModal(data)}>
-                                                <Pencil className="mr-1" /> {/* Icône pour Modifier */}
-                                            </button>
-                                            <button className="flex items-center bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600" onClick={() => handleDelete(data.numDemande)}>
-                                                <Trash className="mr-1" /> {/* Icône pour Supprimer */}
-                                            </button>
-                                            <button className="flex items-center bg-green-500 text-white px-2 py-1 rounded hover:bg-green-600" onClick={() => openModal(data)}>
-                                                <Check className="mr-1" /> {/* Icône pour Accepter */}
-                                            </button>
-                                        </div>
-                                    </td>
+                        {Array.isArray(currentDemandes) && currentDemandes.map((data, i) => (
+
+                            <tr key={i} className="border-t">
+                                <td className="py-3 px-6 text-left">{data.numDemande}</td>
+                                <td className="py-3 px-6 text-left">{data.nomClient}</td>
+                                <td className="py-3 px-6 text-left">{formatDate(data.dateDemande)}</td>
+                                <td className="py-3 px-6 text-left">{data.typeDemande}</td>
+                                <td className="py-3 px-6 text-left">{data.longueur}</td>
+                                <td className="py-3 px-6 text-left">{data.largeur}</td>
+                                <td className="py-3 px-6 text-left">{data.lieu}</td>
+                                <td className="py-3 px-6 text-left">
+                                    <div className="flex space-x-2"> {/* Conteneur flex avec espacement */}
+                                        <button className="flex items-center bg-blue-500 text-white px-2 py-1 rounded hover:bg-blue-600" onClick={() => openEditModal(data)}>
+                                            <Pencil className="mr-1" /> {/* Icône pour Modifier */}
+                                        </button>
+                                        <button className="flex items-center bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600" onClick={() => handleDelete(data.numDemande)}>
+                                            <Trash className="mr-1" /> {/* Icône pour Supprimer */}
+                                        </button>
+                                        <button className={`flex items-center px-2 py-1 rounded ${isCheckButtonDisabled ? 'bg-gray-400 cursor-not-allowed' : 'bg-green-500 hover:bg-green-600'
+                                            }`} onClick={() => openModal(data)} disabled={isCheckButtonDisabled}>
+                                            <Check className="mr-1" />
+                                        </button>
+                                    </div>
+                                </td>
 
 
-                                </tr>
-                            ))}
+                            </tr>
+                        ))}
                     </tbody>
                 </table>
 
+                <div className="flex mt-4">
+                    {pageNumbers.map((number) => (
+                        <button key={number} onClick={() => paginate(number)} className={`mx-1 px-3 py-1 rounded ${currentPage === number ? 'bg-blue-500 text-white' : 'bg-gray-300 text-black'}`}>
+                            {number}
+                        </button>
+                    ))}
+                </div>
                 {/* Modal for adding demande */}
-                <Modal isOpen={addModalIsOpen} onRequestClose={closeModal}>
+                <Modal isOpen={addModalIsOpen} onRequestClose={closeModal} className="fixed inset-0 flex justify-center items-center z-50">
+                <div className="max-w-2xl w-full p-6 bg-white rounded-lg shadow-lg">
                     <h2 className="text-2xl font-bold mb-4">NOUVELLE DEMANDE</h2>
                     <form onSubmit={handleAddSubmit}>
                         <div className="mb-4">
@@ -325,10 +413,12 @@ export default function Listdemande() {
                         <button type="submit" className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">ENREGISTRER</button>
                         <button type="button" className="ml-2 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600" onClick={closeModal}>Annuler</button>
                     </form>
+                    </div>
                 </Modal>
 
                 {/* Modal for editing demande */}
-                <Modal isOpen={editModalIsOpen} onRequestClose={closeModal}>
+                <Modal isOpen={editModalIsOpen} onRequestClose={closeModal} className="fixed inset-0 flex justify-center items-center z-50">
+                <div className="max-w-2xl w-full p-6 bg-white rounded-lg shadow-lg">
                     <h2 className="text-2xl font-bold mb-4">MODIFIER UNE DEMANDE</h2>
                     <form onSubmit={handleEditSubmit}>
                         <div className="mb-4">
@@ -372,11 +462,13 @@ export default function Listdemande() {
                         <button type="submit" className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">ENREGISTRER</button>
                         <button type="button" className="ml-2 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600" onClick={closeModal}>Annuler</button>
                     </form>
+                </div>
                 </Modal>
 
 
                 {/* Modal for 'Devis' and 'Avis de paiement' */}
-                <Modal isOpen={modalIsOpen} onRequestClose={closeModal}>
+                <Modal isOpen={modalIsOpen} onRequestClose={closeModal} className="fixed inset-0 flex justify-center items-center z-50">
+                <div className="max-w-2xl w-full p-6 bg-white rounded-lg shadow-lg">
                     <h2 className="text-xl font-bold mb-4">Devis de la demande numero - {selectedDemande?.numDemande}</h2>
 
                     <div className="flex space-x-4 mb-4">
@@ -458,6 +550,7 @@ export default function Listdemande() {
                             </form>
                         </div>
                     )}
+                    </div>
                 </Modal>
 
             </Dashboard>
