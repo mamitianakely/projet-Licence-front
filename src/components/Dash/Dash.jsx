@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import Dashboard from "../Dashboard/Dashboard";
 import { Line, Bar, Doughnut, Pie } from 'react-chartjs-2';
 import 'chart.js/auto';
-import axios from "axios";
+import axios from '../../AxiosConfig';
 import { TrendingUp, TrendingDown, DollarSign } from 'lucide-react';
 
 export default function Dash() {
@@ -72,30 +72,28 @@ export default function Dash() {
     useEffect(() => {
         const fetchTotalClients = async () => {
             try {
-                const response = await fetch('http://localhost:5000/api/clients/stats/total'); // Update this to your API endpoint
-                const text = await response.text(); // Read the response as text
-                console.log('Response:', text); // Log the response text
-                const data = JSON.parse(text); // Attempt to parse as JSON
-                setTotalClients(data.totalClients); // Set the total clients from the response
+                const response = await axios.get('http://localhost:5000/api/clients/stats/total'); // Utilisation d'axios pour faire la requête GET
+                console.log('Response:', response.data); // Afficher la réponse dans la console
+                setTotalClients(response.data.totalClients); // Extraire et définir le nombre total de clients depuis la réponse
             } catch (error) {
-                console.error('Error fetching total clients:', error);
+                console.error('Error fetching total clients:', error); // Gérer l'erreur si la requête échoue
             }
         };
 
         const fetchPendingDemandesCount = async () => {
             try {
-                const response = await fetch('http://localhost:5000/api/demandes/pending/count'); // Update this to your API endpoint
-                const result = await response.json();
-                setPendingDemandesCount(result.pendingDemandesCount);
+                const response = await axios.get('http://localhost:5000/api/demandes/pending/count'); // Utilisation d'axios pour faire la requête GET
+                console.log('Response:', response.data); // Afficher la réponse dans la console
+                setPendingDemandesCount(response.data.pendingDemandesCount); // Extraire et définir le nombre de demandes en attente depuis la réponse
             } catch (error) {
-                console.error('Error fetching pending demandes:', error);
+                console.error('Error fetching pending demandes:', error); // Gérer l'erreur si la requête échoue
             }
         };
 
         const fetchDemandesByType = async () => {
             try {
-                const response = await fetch('http://localhost:5000/api/demandes/stats/type-by-month');
-                const result = await response.json();
+                const response = await axios.get('http://localhost:5000/api/demandes/stats/type-by-month'); // Utilisation de axios pour récupérer les données
+                const result = response.data; // Récupérer directement la réponse
 
                 // Log the result to check its structure
                 console.log("Demandes by Type Response:", result);
@@ -121,13 +119,15 @@ export default function Dash() {
 
                 setDemandesByType({ labels, datasets });
             } catch (error) {
-                console.error('Error fetching demandes by type:', error);
+                console.error('Error fetching demandes by type:', error); // Gestion de l'erreur si la requête échoue
             }
         };
+
         const fetchDemandesByMonth = async () => {
             try {
-                const response = await fetch('http://localhost:5000/api/demandes/stats/monthly');
-                const result = await response.json();
+                const response = await axios.get('http://localhost:5000/api/demandes/stats/monthly'); // Utilisation de axios pour récupérer les données
+                const result = response.data; // Récupérer directement la réponse
+
                 console.log("Réponse de l'API Demandes par Mois :", result);
 
                 const data = Array(12).fill(0);
@@ -161,21 +161,17 @@ export default function Dash() {
                     ],
                 });
             } catch (error) {
-                console.error('Erreur lors de la récupération des demandes par mois:', error);
+                console.error('Erreur lors de la récupération des demandes par mois:', error); // Gestion de l'erreur si la requête échoue
             }
         };
-
         const fetchTotalDemandes = async () => {
             try {
-                const response = await fetch('http://localhost:5000/api/demandes/stats/total');
-                if (!response.ok) {
-                    const errorData = await response.json();
-                    throw new Error(`Erreur réseau: ${errorData.error}`);
-                }
-                const data = await response.json();
-                setTotalDemandes(data.total);
+                const response = await axios.get('http://localhost:5000/api/demandes/stats/total'); // Utilisation d'axios pour récupérer les données
+                const data = response.data; // La réponse est directement dans response.data
+
+                setTotalDemandes(data.total); // Mise à jour de l'état avec la valeur récupérée
             } catch (error) {
-                console.error('Erreur lors de la récupération du total des demandes:', error);
+                console.error('Erreur lors de la récupération du total des demandes:', error.response ? error.response.data : error.message); // Gestion des erreurs
             }
         };
 
@@ -308,23 +304,7 @@ export default function Dash() {
             }
         };
 
-        const fetchDemandesWithoutDevis = async () => {
-            try {
-                const response = await fetch('http://localhost:5000/api/demandes/stats/count-awaiting-devis');
-
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-
-                const data = await response.json(); // Pas besoin de parser manuellement ici
-                console.log('Response:', data); // Log the response object
-
-                // Assurez-vous d'utiliser "count" comme clé
-                setDemandesSansDevis(data.count); // Met à jour l'état avec la valeur de count
-            } catch (error) {
-                console.error('Error fetching demandes without devis:', error);
-            }
-        };
+        
 
         const fetchPercentage = async () => {
             try {
@@ -364,7 +344,6 @@ export default function Dash() {
         fetchTotalMontant();
         fetchClientsDistributionByRegion();
         fetchClientsWithoutDemands();
-        fetchDemandesWithoutDevis();
         fetchPercentage();
         fetchPercentageWithAvis();
     }, []); // Empty dependency array ensures this runs once when the component mounts
@@ -401,9 +380,9 @@ export default function Dash() {
             <Dashboard>
                 <div className="flex space-x-3">
                     {/* Bandwidth Reports Section */}
-                    <div className="bg-white p-3 rounded-lg shadow-md flex-1">
-                        <div className="flex justify-center items-center mb-3">
-                            <h2 className="text-lg font-semibold text-indigo-800">Permit Reports</h2>
+                    <div className="bg-white p-1 rounded-lg shadow-md flex-1">
+                        <div className="flex justify-center items-center mb-1">
+                            <h2 className="text-lg font-semibold text-indigo-800 mb-3">Permit Reports</h2>
                         </div>
 
 
@@ -429,12 +408,12 @@ export default function Dash() {
                             </div>
 
                             {/* Graphs */}
-                            <h2 className="text-sm font-semibold text-indigo-800">Demandes par Mois</h2>
+                            <h2 className="text-sm font-semibold p-2 text-indigo-800">Demandes par Mois</h2>
                             <div className="h-24">
                                 <Line data={demandesByMonth} options={options} />
                             </div>
 
-                            <h2 className="text-sm font-semibold text-indigo-800 mt-3">Type de Demandes par Mois</h2>
+                            <h2 className="text-sm font-semibold p-2 text-indigo-800 mt-3">Type de Demandes par Mois</h2>
                             <div className="h-24">
                                 <Bar data={demandesByType} options={options} />
                             </div>
@@ -445,16 +424,14 @@ export default function Dash() {
                     {/* Statistics Cards Section */}
                     <div className="grid grid-cols-2 gap-3 flex-1">
                         {/* Total Devis */}
-                        <div className="bg-indigo-200 p-3 rounded-lg text-center">
+                        <div className="bg-[#ade6f7] p-3 h-55 rounded-lg text-center">
                             <p className="text-lg font-bold text-gray-800">{totalDevis}</p>
                             <p className="text-xs text-gray-600">Total des devis</p>
                         </div>
 
 
-
-
                         {/* Montant des devis */}
-                        <div className="bg-cyan-100 p-4 rounded-lg shadow-md text-center">
+                        <div className="bg-[#bab9c4] p-4 rounded-lg shadow-md text-center">
                             <h3 className="text-lg font-bold text-gray-800 mb-3">Montant des devis</h3>
 
                             {/* Montant avec icône Dollar */}
@@ -480,7 +457,7 @@ export default function Dash() {
 
 
                         {/* Statistics Cards Section */}
-                        <div className="bg-indigo-100 p-6 rounded-lg shadow-lg">
+                        <div className="bg-[#bab9c4] p-6 rounded-lg shadow-lg">
                             <h2 className="text-lg font-semibold text-indigo-700 text-center mb-4">Répartition des Clients par Quartier</h2>
 
 
@@ -507,7 +484,7 @@ export default function Dash() {
 
                         {/* Clients sans demande et demandes sans devis */}
                         {/* Clients sans demande et demandes sans devis */}
-                        <div className="bg-cyan-100 p-4 rounded-lg shadow-md text-center">
+                        <div className="bg-[#ade6f7] p-4 rounded-lg shadow-md text-center">
                             <p className="text-sm text-gray-700">
                                 Total Clients : <span className="font-bold text-indigo-700">{totalClients}</span>
                             </p>
@@ -527,7 +504,7 @@ export default function Dash() {
                 {/* Additional Statistics Section */}
                 <div className="mt-4 grid grid-cols-3 gap-2">
                     {/* Avis de Paiement Acceptés */}
-                    <div className="bg-indigo-100 p-3 rounded-md shadow-sm border border-indigo-200">
+                    <div className="bg-white p-3 rounded-md shadow-sm border border-indigo-200">
                         <h2 className="text-sm font-bold text-indigo-800 mb-1">Avis de Paiement</h2>
                         <p className="text-xs text-gray-600">Total : <span className="font-semibold text-amber-500">{totalAvisPaiement}</span></p>
                         <p className="text-xs text-gray-600">Paiement effectué : <span className="font-semibold text-cyan-600">{acceptedAvisPaiement}</span></p>
@@ -538,7 +515,7 @@ export default function Dash() {
                     </div>
 
                     {/* Reports Submitted */}
-                    <div className="bg-cyan-100 p-3 rounded-md shadow-sm border border-cyan-200">
+                    <div className="bg-white p-3 rounded-md shadow-sm border border-cyan-200">
                         <h2 className="text-sm font-bold text-cyan-800 mb-1">Permis Délivrés</h2>
                         <p className="text-xs text-gray-600">Total : <span className="font-semibold text-amber-500">{totalPermis}</span></p>
                         <p className="text-xs text-gray-600">Montant généré : <span className="font-semibold text-amber-500">{totalMontant || 0} Ariary</span></p>
@@ -549,7 +526,7 @@ export default function Dash() {
                     </div>
 
                     {/* Statistiques des Demandes */}
-                    <div className="bg-indigo-100 p-3 rounded-md shadow-sm border border-indigo-200">
+                    <div className="bg-white p-3 rounded-md shadow-sm border border-indigo-200">
                         <h2 className="text-sm font-bold text-indigo-800 mb-1">Statistiques des Demandes</h2>
                         <div className="h-20 mt-2 flex items-center justify-center">
                             <Doughnut data={doughnutData} options={{ maintainAspectRatio: false }} />

@@ -1,8 +1,13 @@
 import React, { useEffect, useState } from "react";
-import axios from 'axios';
+import axios from '../../AxiosConfig';
 import Dashboard from "../Dashboard/Dashboard";
 import Modal from 'react-modal';
-import { Pencil, Trash } from 'lucide-react';
+import { Pencil, Trash, Plus } from 'lucide-react';
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+import { confirmAlert } from "react-confirm-alert";
+import "react-confirm-alert/src/react-confirm-alert.css";
+
 
 export default function Listclient() {
     const [client, setClient] = useState([]);
@@ -14,10 +19,15 @@ export default function Listclient() {
         nomClient: '',
         adresse: '',
         contact: ''
-    })
+    });
+
+    const [showButtons, setShowButtons] = useState(false);
+    const toggleButtons = () => {
+        setShowButtons(!showButtons); // Basculer l'affichage des boutons
+    };
 
     const [currentPage, setCurrentPage] = useState(1);
-    const itemsPerPage = 10;
+    const itemsPerPage = 5;
 
     const openAddModal = () => {
         setFormState({
@@ -35,8 +45,31 @@ export default function Listclient() {
             const response = await axios.post('http://localhost:5000/api/clients', formState);
             setClient([...client, response.data]);
             closeModal();
+
+            // Afficher une notification de succès avec react-toastify
+            toast.success('Client ajouté avec succès!', {
+                position: "top-right",
+                autoClose: 3000,
+                hideProgressBar: false,
+                closeOnClick: true,
+                pauseOnHover: true,
+                draggable: true,
+                progress: undefined,
+                theme: "colored"
+            })
         } catch (err) {
             console.error(err);
+            // Afficher une notification d'erreur si quelque chose ne va pas
+            toast.error('Erreur lors de l’ajout du client.', {
+                position: "top-right",
+                autoClose: 3000,
+                hideProgressBar: false,
+                closeOnClick: true,
+                pauseOnHover: true,
+                draggable: true,
+                progress: undefined,
+                theme: "colored"
+            })
         }
     };
 
@@ -68,18 +101,83 @@ export default function Listclient() {
             await axios.put(`http://localhost:5000/api/clients/${formState.numChrono}`, formState);
             setClient(client.map(d => d.numChrono === formState.numChrono ? formState : d));
             closeModal();
+            // Affiche une notification de succès
+            toast.success('Client modifié avec succès!', {
+                position: "top-right",
+                autoClose: 3000,
+                hideProgressBar: false,
+                closeOnClick: true,
+                pauseOnHover: true,
+                draggable: true,
+                progress: undefined,
+                theme: "colored"
+            })
         } catch (err) {
             console.error(err);
+            // Affiche une notification d'erreur en cas de problème
+            toast.error("Erreur lors de la modification du client.", {
+                position: "top-right",
+                autoClose: 3000,
+                hideProgressBar: false,
+                closeOnClick: true,
+                pauseOnHover: true,
+                draggable: true,
+                progress: undefined,
+                theme: "colored"
+            });
         }
     };
     // Gérer la suppression d'un client
     const handleDelete = async (numChrono) => {
-        try {
-            await axios.delete(`http://localhost:5000/api/clients/${numChrono}`);
-            window.location.reload();
-        } catch (err) {
-            console.log(err);
-        }
+        // Affiche une boîte de dialogue de confirmation
+        confirmAlert({
+            title: "Confirmation de suppression",
+            message: "Voulez-vous vraiment supprimer ce client ?",
+            buttons: [
+                {
+                    label: "Oui",
+                    onClick: async () => {
+                        try {
+                            await axios.delete(`http://localhost:5000/api/clients/${numChrono}`);
+                            // Mettre à jour l'état local pour supprimer l'avis supprimé
+                            setClient(prevClient => prevClient.filter(client => client.numChrono !== numChrono));
+                            // Mettre à jour l'interface après suppression
+
+                            // Afficher une notification de succès
+                            toast.success('Client supprimé avec succès!', {
+                                position: "top-right",
+                                autoClose: 3000,
+                                hideProgressBar: false,
+                                closeOnClick: true,
+                                pauseOnHover: true,
+                                draggable: true,
+                                progress: undefined,
+                                theme: "colored"
+                            });
+
+                        } catch (error) {
+                            console.error(error);
+                            toast.error('Erreur lors de la suppression. Veuillez réessayer.', {
+                                position: "top-right",
+                                autoClose: 3000,
+                                hideProgressBar: false,
+                                closeOnClick: true,
+                                pauseOnHover: true,
+                                draggable: true,
+                                progress: undefined,
+                                theme: "colored"
+                            });
+                        }
+                    },
+                },
+                {
+                    label: "Non",
+                    onClick: () => console.log("Suppression annulée")
+                }
+            ],
+            overlayClassName: "custom-overlay",
+            className: "custom-ui",
+        });
     };
 
     // Récupérer tous les clients au chargement du composant
@@ -112,6 +210,7 @@ export default function Listclient() {
     return (
         <div className="min-h-screen bg-gray-100">
             <Dashboard>
+
                 <div className="p-6">
                     <div className="flex justify-between items-center mb-4">
                         <form onSubmit={(e) => e.preventDefault()} className="w-full max-w-md">
@@ -119,37 +218,47 @@ export default function Listclient() {
                                 className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                             />
                         </form>
+                        
                         <button className="ml-4 px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600" onClick={openAddModal}>
-                            AJOUTER
+                        <Plus className="mr-1" />
                         </button>
                     </div>
 
+                    <h2 className="text-2xl font-bold mb-4 text-black">LISTE DES CLIENTS</h2>
+
                     <table className="min-w-full bg-white shadow-md rounded-lg">
                         <thead>
-                            <tr className="bg-gray-200 text-gray-600 uppercase text-sm leading-normal">
-                                <th className="py-3 px-6 text-left">Numero du Client</th>
-                                <th className="py-3 px-6 text-left">Nom du Client</th>
-                                <th className="py-3 px-6 text-left">Adresse</th>
-                                <th className="py-3 px-6 text-left">Contact</th>
+                            <tr className="bg-cyan-700 text-gray-900 uppercase text-sm leading-normal">
+                                <th className="py-3 px-6 text-center">Numero du Client</th>
+                                <th className="py-3 px-6 text-center">Nom du Client</th>
+                                <th className="py-3 px-6 text-center">Adresse</th>
+                                <th className="py-3 px-6 text-center">Contact</th>
                                 <th className="py-3 px-6"></th>
                             </tr>
                         </thead>
                         <tbody className="text-gray-600 text-sm">
-                            {Array.isArray(currentClients) && currentClients.map((data, i)  => (
+                            {Array.isArray(currentClients) && currentClients.map((data, i) => (
                                 <tr key={i} className="border-b border-gray-200 hover:bg-gray-100">
-                                    <td className="py-3 px-6 text-left">{data.numChrono}</td>
-                                    <td className="py-3 px-6 text-left">{data.nomClient}</td>
-                                    <td className="py-3 px-6 text-left">{data.adresse}</td>
-                                    <td className="py-3 px-6 text-left">{data.contact}</td>
+                                    <td className="py-3 px-6 text-center">{data.numChrono}</td>
+                                    <td className="py-3 px-6 text-center">{data.nomClient}</td>
+                                    <td className="py-3 px-6 text-center">{data.adresse}</td>
+                                    <td className="py-3 px-6 text-center">{data.contact}</td>
                                     <td className="py-3 px-6 text-right flex space-x-2">
-                                        <div className="flex space-x-2"> {/* Conteneur flex avec espacement */}
-                                            <button className="flex items-center bg-blue-500 text-white px-2 py-1 rounded hover:bg-blue-600" onClick={() => openEditModal(data)}>
-                                                <Pencil className="mr-1" /> {/* Icône pour Modifier */}
-                                            </button>
-                                            <button className="flex items-center bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600" onClick={() => handleDelete(data.numChrono)}>
-                                                <Trash className="mr-1" /> {/* Icône pour Supprimer */}
-                                            </button>
-                                        </div>
+                                        {/* Bouton pour afficher/masquer les autres boutons */}
+                                        <button className="flex items-center bg-indigo-500 text-white px-2 py-1 rounded hover:bg-indigo-600" onClick={toggleButtons}>...</button>
+
+                                        {/* Affichage conditionnel des boutons */}
+                                        {showButtons && (
+                                            <div className="flex space-x-2"> {/* Conteneur flex avec espacement */}
+                                                <button className="flex items-center bg-blue-500 text-white px-2 py-1 rounded hover:bg-blue-600" onClick={() => openEditModal(data)}>
+                                                    <Pencil className="mr-1" /> {/* Icône pour Modifier */}
+                                                </button>
+                                                <button className="flex items-center bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600" onClick={() => handleDelete(data.numChrono)}>
+                                                    <Trash className="mr-1" /> {/* Icône pour Supprimer */}
+                                                </button>
+
+                                            </div>
+                                        )}
                                     </td>
                                 </tr>
                             ))}
@@ -164,64 +273,65 @@ export default function Listclient() {
                     </div>
                     {/* Modal for adding verificateur*/}
                     <Modal isOpen={addModalIsOpen} onRequestClose={closeModal} className="fixed inset-0 flex justify-center items-center z-50">
-                    <div className="max-w-2xl w-full p-6 bg-white rounded-lg shadow-lg">
-                        <h2 className="text-2xl font-bold mb-4">NOUVEAU CLIENT</h2>
-                        <form onSubmit={handleAddSubmit}>
+                        <div className="max-w-2xl w-full p-6 bg-white rounded-lg shadow-lg">
+                            <h2 className="text-2xl font-bold mb-4">NOUVEAU CLIENT</h2>
+                            <form onSubmit={handleAddSubmit}>
 
-                            <div className="mb-2">
-                                <label htmlFor="">Nom du client : </label>
-                                <input type="text" className="w-full p-2 border border-gray-300 rounded" onChange={e => setFormState({ ...formState, nomClient: e.target.value })} required />
-                            </div>
+                                <div className="mb-2">
+                                    <label htmlFor="">Nom du client : </label>
+                                    <input type="text" className="w-full p-2 border border-gray-300 rounded" onChange={e => setFormState({ ...formState, nomClient: e.target.value })} required />
+                                </div>
 
-                            <div className="mb-2">
-                                <label htmlFor="">Adresse du client : </label>
-                                <input type="text" className="w-full p-2 border border-gray-300 rounded" onChange={e => setFormState({ ...formState, adresse: e.target.value })} required />
-                            </div>
+                                <div className="mb-2">
+                                    <label htmlFor="">Adresse du client : </label>
+                                    <input type="text" className="w-full p-2 border border-gray-300 rounded" onChange={e => setFormState({ ...formState, adresse: e.target.value })} required />
+                                </div>
 
-                            <div className="mb-2">
-                                <label htmlFor="">Numéro du téléphone : </label>
-                                <input type="text" className="w-full p-2 border border-gray-300 rounded" onChange={e => setFormState({ ...formState, contact: e.target.value })} required />
-                            </div>
+                                <div className="mb-2">
+                                    <label htmlFor="">Numéro du téléphone : </label>
+                                    <input type="text" className="w-full p-2 border border-gray-300 rounded" onChange={e => setFormState({ ...formState, contact: e.target.value })} required />
+                                </div>
 
-                            <button type="submit" className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
-                            > ENREGISTRER
-                            </button>
-                            <button type="button" className="ml-2 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600"
-                                onClick={closeModal} >
-                                Annuler
-                            </button>
-                        </form>
+                                <button type="submit" className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
+                                > ENREGISTRER
+                                </button>
+                                <button type="button" className="ml-2 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600"
+                                    onClick={closeModal} >
+                                    Annuler
+                                </button>
+                            </form>
                         </div>
                     </Modal>
 
                     {/* Modal for editing verificateur */}
                     <Modal isOpen={editModalIsOpen} onRequestClose={closeModal} className="fixed inset-0 flex justify-center items-center z-50">
-                    <div className="max-w-2xl w-full p-6 bg-white rounded-lg shadow-lg">
-                        <h2 className="text-2xl font-bold mb-4">MODIFIER UN CLIENT</h2>
-                        <form onSubmit={handleEditSubmit}>
-                            <div className="mb-2">
-                                <label htmlFor="">Nom du client : </label>
-                                <input type="text" className="w-full p-2 border border-gray-300 rounded" value={formState.nomClient} onChange={(e) =>
-                                    setFormState({ ...formState, nomClient: e.target.value })} required />
-                            </div>
-                            <div className="mb-2">
-                                <label htmlFor="">Adresse du client : </label>
-                                <input type="text" className="w-full p-2 border border-gray-300 rounded" value={formState.adresse} onChange={(e) =>
-                                    setFormState({ ...formState, adresse: e.target.value })} required />
-                            </div>
-                            <div className="mb-2">
-                                <label htmlFor="">Numéro du téléphone : </label>
-                                <input type="text" className="w-full p-2 border border-gray-300 rounded" value={formState.contact} onChange={(e) =>
-                                    setFormState({ ...formState, contact: e.target.value })} required />
-                            </div>
+                        <div className="max-w-2xl w-full p-6 bg-white rounded-lg shadow-lg">
+                            <h2 className="text-2xl font-bold mb-4">MODIFIER UN CLIENT</h2>
+                            <form onSubmit={handleEditSubmit}>
+                                <div className="mb-2">
+                                    <label htmlFor="">Nom du client : </label>
+                                    <input type="text" className="w-full p-2 border border-gray-300 rounded" value={formState.nomClient} onChange={(e) =>
+                                        setFormState({ ...formState, nomClient: e.target.value })} required />
+                                </div>
+                                <div className="mb-2">
+                                    <label htmlFor="">Adresse du client : </label>
+                                    <input type="text" className="w-full p-2 border border-gray-300 rounded" value={formState.adresse} onChange={(e) =>
+                                        setFormState({ ...formState, adresse: e.target.value })} required />
+                                </div>
+                                <div className="mb-2">
+                                    <label htmlFor="">Numéro du téléphone : </label>
+                                    <input type="text" className="w-full p-2 border border-gray-300 rounded" value={formState.contact} onChange={(e) =>
+                                        setFormState({ ...formState, contact: e.target.value })} required />
+                                </div>
 
 
-                            <button type="submit" className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">ENREGISTRER</button>
-                            <button type="button" className="ml-2 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600" onClick={closeModal}>Annuler</button>
-                        </form>
+                                <button type="submit" className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">ENREGISTRER</button>
+                                <button type="button" className="ml-2 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600" onClick={closeModal}>Annuler</button>
+                            </form>
                         </div>
                     </Modal>
                 </div>
+                <ToastContainer />
             </Dashboard>
         </div>
     );

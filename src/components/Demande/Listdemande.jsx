@@ -1,8 +1,12 @@
 import React, { useEffect, useState } from "react";
-import axios from 'axios';
+import axios from '../../AxiosConfig';
 import Modal from 'react-modal';
 import Dashboard from '../Dashboard/Dashboard';
-import { Pencil, Trash, Check, Search } from 'lucide-react';
+import { Pencil, Trash, Check, Search, Plus } from 'lucide-react';
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+import { confirmAlert } from "react-confirm-alert";
+import "react-confirm-alert/src/react-confirm-alert.css";
 
 export default function Listdemande() {
     const [demande, setDemande] = useState([]);
@@ -14,32 +18,20 @@ export default function Listdemande() {
     const [prixLongueur, setPrixLongueur] = useState(0);
     const [prixLargeur, setPrixLargeur] = useState(0);
     const [montant, setMontant] = useState(0);
-    const [isDevisSubmitted, setIsDevisSubmitted] = useState(false);
-    // const [numDevis, setNumDevis] = useState(0);
+    const [isDevisCreated, setIsDevisCreated] = useState(false); // Devis créé ou non
+    const [isAvisCreated, setIsAvisCreated] = useState(false); // Avis créé ou non
+    const [isDevisSubmitted, setIsDevisSubmitted] = useState(false); // Suivi de la soumission du devis
+
+    const [showButtons, setShowButtons] = useState(false);
+    const toggleButtons = () => {
+        setShowButtons(!showButtons); // Basculer l'affichage des boutons
+    };
 
     const [startDate, setStartDate] = useState('');
     const [endDate, setEndDate] = useState('');
 
-
     const [currentPage, setCurrentPage] = useState(1);
-    const itemsPerPage = 10;
-
-    const [isDevisCreated, setIsDevisCreated] = useState(() => {
-        // Charger l'état depuis localStorage si disponible
-        const savedState = localStorage.getItem('isDevisCreated');
-        return savedState ? JSON.parse(savedState) : false;
-    });
-
-    const [isAvisCreated, setIsAvisCreated] = useState(() => {
-        const savedState = localStorage.getItem('isAvisCreated');
-        return savedState ? JSON.parse(savedState) : false;
-    });
-
-    // Enregistrer l'état dans localStorage lorsque l'état change
-    useEffect(() => {
-        localStorage.setItem('isDevisCreated', JSON.stringify(isDevisCreated));
-        localStorage.setItem('isAvisCreated', JSON.stringify(isAvisCreated));
-    }, [isDevisCreated, isAvisCreated]);
+    const itemsPerPage = 5;
 
     const [formState, setFormState] = useState({
         numDemande: '',
@@ -51,21 +43,25 @@ export default function Listdemande() {
         lieu: ''
     });
     const [selectedDemande, setSelectedDemande] = useState(null); // Stores selected demand for editing
-
     const openModal = (demandeData) => {
         // Récupérer les valeurs de longueur et largeur depuis les données de la demande sélectionnée
         const longueur = demandeData.longueur;
         const largeur = demandeData.largeur;
+        const prixUnitaireLongueur = demandeData.prixUnitaireLongueur || 0; // Valeur par défaut
+        const prixUnitaireLargeur = demandeData.prixUnitaireLargeur || 0;   // Valeur par défaut
 
         // Calculer prixLongueur, prixLargeur et le montant total
-        const calculatedPrixLongueur = longueur * 500;
-        const calculatedPrixLargeur = largeur * 500;
+        const calculatedPrixLongueur = longueur * prixUnitaireLongueur;
+        const calculatedPrixLargeur = largeur * prixUnitaireLargeur;
         const calculatedMontant = calculatedPrixLongueur + calculatedPrixLargeur;
 
         // Mettre à jour l'état avec les données de la demande sélectionnée et les valeurs calculées
         setSelectedDemande({
             ...demandeData,
+
             dateAvis: new Date().toISOString().split("T")[0], // Définit la date d'aujourd'hui
+            prixUnitaireLongueur,
+            prixUnitaireLargeur,
         });
         setPrixLongueur(calculatedPrixLongueur);
         setPrixLargeur(calculatedPrixLargeur);
@@ -74,6 +70,24 @@ export default function Listdemande() {
         // Ouvrir la fenêtre modale
         setModalIsOpen(true);
     };
+
+    // Modification pour que les champs réagissent au changement de prix unitaire
+    const handleInputChange = (e, field) => {
+        const value = parseFloat(e.target.value) || 0;  // Mettre 0 par défaut si la valeur est vide ou invalide
+
+        setSelectedDemande({
+            ...selectedDemande,
+            [field]: value, // Mise à jour du champ spécifique (prixUnitaireLongueur ou prixUnitaireLargeur)
+        });
+
+        // Recalcul des valeurs dès que l'utilisateur modifie un prix unitaire
+        const prixLongueur = selectedDemande.longueur * (field === 'prixUnitaireLongueur' ? value : selectedDemande.prixUnitaireLongueur);
+        const prixLargeur = selectedDemande.largeur * (field === 'prixUnitaireLargeur' ? value : selectedDemande.prixUnitaireLargeur);
+        setPrixLongueur(prixLongueur);
+        setPrixLargeur(prixLargeur);
+        setMontant(prixLongueur + prixLargeur);  // Mettre à jour le montant total
+    };
+
 
     useEffect(() => {
         const fetchDemandes = async () => {
@@ -113,12 +127,55 @@ export default function Listdemande() {
     };
 
     const handleDelete = async (numDemande) => {
-        try {
-            await axios.delete(`http://localhost:5000/api/demandes/${numDemande}`);
-            setDemande(demande.filter(item => item.numDemande !== numDemande));
-        } catch (err) {
-            console.log(err);
-        }
+        // Affiche une boîte de dialogue de confirmation
+        confirmAlert({
+            title: "Confirmation de suppression",
+            message: "Voulez-vous vraiment supprimer cette demande ?",
+            buttons: [
+                {
+                    label: "Oui",
+                    onClick: async () => {
+                        try {
+                            await axios.delete(`http://localhost:5000/api/demandes/${numDemande}`);
+                            // Mettre à jour l'état local pour supprimer l'avis supprimé
+                            setDemande(prevDemande => prevDemande.filter(demande => demande.numDemande !== numDemande));
+                            // Mettre à jour l'interface après suppression
+
+                            // Afficher une notification de succès
+                            toast.success('Demande supprimé avec succès!', {
+                                position: "top-right",
+                                autoClose: 3000,
+                                hideProgressBar: false,
+                                closeOnClick: true,
+                                pauseOnHover: true,
+                                draggable: true,
+                                progress: undefined,
+                                theme: "colored"
+                            });
+
+                        } catch (error) {
+                            console.error(error);
+                            toast.error('Erreur lors de la suppression. Veuillez réessayer.', {
+                                position: "top-right",
+                                autoClose: 3000,
+                                hideProgressBar: false,
+                                closeOnClick: true,
+                                pauseOnHover: true,
+                                draggable: true,
+                                progress: undefined,
+                                theme: "colored"
+                            });
+                        }
+                    },
+                },
+                {
+                    label: "Non",
+                    onClick: () => console.log("Suppression annulée")
+                }
+            ],
+            overlayClassName: "custom-overlay",
+            className: "custom-ui",
+        });
     };
 
     const openAddModal = () => {
@@ -157,6 +214,7 @@ export default function Listdemande() {
         setSelectedTab(tab);
     };
 
+    //ajouter demande
     const handleAddSubmit = async (event) => {
         event.preventDefault();
         try {
@@ -168,23 +226,69 @@ export default function Listdemande() {
             setDemande(demandeResponse.data); // Mettre à jour l'état avec les nouvelles données
 
             closeModal();
+            // Afficher une notification de succès avec react-toastify
+            toast.success('Demande ajouté avec succès!', {
+                position: "top-right",
+                autoClose: 3000,
+                hideProgressBar: false,
+                closeOnClick: true,
+                pauseOnHover: true,
+                draggable: true,
+                progress: undefined,
+                theme: "colored"
+            })
+
+            // Réinitialiser les états pour rendre le bouton Check réactif à la création d'une nouvelle demande
+            setIsDevisCreated(false);
+            setIsAvisCreated(false);
         } catch (err) {
             console.error(err);
+            toast.error('Erreur lors de l’ajout du demande.', {
+                position: "top-right",
+                autoClose: 3000,
+                hideProgressBar: false,
+                closeOnClick: true,
+                pauseOnHover: true,
+                draggable: true,
+                progress: undefined,
+                theme: "colored"
+            });
         }
     };
 
-
+    //modifier demande
     const handleEditSubmit = async (event) => {
         event.preventDefault();
         try {
             await axios.put(`http://localhost:5000/api/demandes/${formState.numDemande}`, formState);
             setDemande(demande.map(d => d.numDemande === formState.numDemande ? formState : d));
             closeModal();
+            toast.success('Demande modifié avec succès!', {
+                position: "top-right",
+                autoClose: 3000,
+                hideProgressBar: false,
+                closeOnClick: true,
+                pauseOnHover: true,
+                draggable: true,
+                progress: undefined,
+                theme: "colored"
+            })
         } catch (err) {
             console.error(err);
+            toast.error("Erreur lors de la modification de la demande.", {
+                position: "top-right",
+                autoClose: 3000,
+                hideProgressBar: false,
+                closeOnClick: true,
+                pauseOnHover: true,
+                draggable: true,
+                progress: undefined,
+                theme: "colored"
+            });
         }
     };
 
+    //filtrer demande
     const filteredDemande = demande.filter((data) => {
         return (
             (data.nomClient && data.nomClient.toLowerCase().includes(searchTerm)) ||  // Vérifie si nomClient existe
@@ -208,143 +312,194 @@ export default function Listdemande() {
         pageNumbers.push(i);
     }
 
-    // Fonction pour réinitialiser les états
-    const resetFormStates = () => {
-        setIsDevisCreated(false);
-        setIsAvisCreated(false);
-    };
 
+    // Ajouter devis
     const handleDevisSubmit = async (e, selectedDemande) => {
         e.preventDefault();
-        const prixLongueur = selectedDemande.longueur * 500;
-        const prixLargeur = selectedDemande.largeur * 500;
+
+        const prixUnitaireLongueur = selectedDemande.prixUnitaireLongueur || 0;  // Valeur par défaut
+        const prixUnitaireLargeur = selectedDemande.prixUnitaireLargeur || 0;    // Valeur par défaut
+
+        // Calcul des prix et du montant
+        const prixLongueur = selectedDemande.longueur * prixUnitaireLongueur;
+        const prixLargeur = selectedDemande.largeur * prixUnitaireLargeur;
         const montant = prixLongueur + prixLargeur;
 
         const devisData = {
-            numDevis: selectedDemande.numDevis, // Assurez-vous que ce champ est bien défini
-            numDemande: selectedDemande.numDemande, // Ajoutez ce champ si nécessaire
+            numDevis: selectedDemande.numDevis,
+            numDemande: selectedDemande.numDemande,
             prixLongueur,
             prixLargeur,
             montant,
         };
 
-        console.log('Données envoyées:', devisData); // Ajoute cette ligne pour voir les données
-
         try {
-            const response = await fetch(`http://localhost:5000/api/devis`, {
-                method: 'POST',
+            const response = await axios.post('http://localhost:5000/api/devis', devisData, {
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify(devisData),
+            });
+            const createdNumDevis = response.data.numDevis;
+
+            // Mettre à jour selectedDemande avec numDevis
+            setSelectedDemande((prevState) => ({
+                ...prevState,
+                numDevis: createdNumDevis,
+            }));
+
+
+            toast.success('Demande ajouté avec succès!', {
+                position: "top-right",
+                autoClose: 3000,
+                hideProgressBar: false,
+                closeOnClick: true,
+                pauseOnHover: true,
+                draggable: true,
+                progress: undefined,
+                theme: "colored"
             });
 
-            if (!response.ok) {
-                throw new Error('Erreur lors de l\'enregistrement du devis');
-            }
+
             setIsDevisCreated(true);
-            setIsAvisCreated(false); // Reset isAvisCreated when a new devis is created
+            setIsDevisSubmitted(true); // Le devis a été soumis
             handleTabClick('avis');
-            // closeModal();
         } catch (error) {
-            console.error('Erreur:', error);
+            console.error('Erreur:', error.response ? error.response.data : error.message);
+            toast.error('Erreur lors de l’ajout du devis.', {
+                position: "top-right",
+                autoClose: 3000,
+                hideProgressBar: false,
+                closeOnClick: true,
+                pauseOnHover: true,
+                draggable: true,
+                progress: undefined,
+                theme: "colored"
+            });
         }
     };
 
-
+    //Ajouter avis
     const handleAvisSubmit = async (e) => {
         e.preventDefault();
 
         const avisData = {
-            numAvis: selectedDemande.numAvis, // Assurez-vous que ce champ est bien défini
-            numDevis: selectedDemande.numDevis, // Récupérer le numDevis de selectedDemande
+            numAvis: selectedDemande.numAvis,
+            numDevis: selectedDemande.numDevis,
             numQuittance: selectedDemande.numQuittance,
             dateAvis: selectedDemande.dateAvis, // Date d'aujourd'hui
         };
 
         try {
-            const response = await fetch(`http://localhost:5000/api/avis`, {
-                method: 'POST',
+            const response = await axios.post('http://localhost:5000/api/avis', avisData, {
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify(avisData),
             });
-
-            if (!response.ok) {
-                throw new Error('Erreur lors de l\'enregistrement de l\'avis de paiement');
-            }
 
             setIsAvisCreated(true);
             closeModal(); // Fermer le modal après la soumission de l'avis
+            // Afficher une notification de succès avec react-toastify
+            toast.success('Avis de paiement ajouté avec succès!', {
+                position: "top-right",
+                autoClose: 3000,
+                hideProgressBar: false,
+                closeOnClick: true,
+                pauseOnHover: true,
+                draggable: true,
+                progress: undefined,
+                theme: "colored"
+            })
         } catch (error) {
-            console.error('Erreur:', error);
+            console.error('Erreur:', error.response ? error.response.data : error.message);
+            toast.error('Erreur lors de l’ajout de Avis de paiement.', {
+                position: "top-right",
+                autoClose: 3000,
+                hideProgressBar: false,
+                closeOnClick: true,
+                pauseOnHover: true,
+                draggable: true,
+                progress: undefined,
+                theme: "colored"
+            });
         }
     };
-
-
-
-    // Désactiver le bouton "Check" si devis et avis ont été créés
-    const isCheckButtonDisabled = isDevisCreated && isAvisCreated;
 
     return (
 
         <div className="min-h-screen bg-gray-100">
             <Dashboard >
+                <ToastContainer />
+
                 <div className="p-4">
                     <div className="flex justify-between items-center mb-4">
                         <form onSubmit={(e) => e.preventDefault()} className="w-full max-w-md">
                             <input type="text" placeholder="Rechercher" value={searchTerm} onChange={handleSearch}
-                                className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                                className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500" />
                         </form>
-                        <button className="ml-4 px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600" onClick={openAddModal}>AJOUTER</button>
+
+                        <div className="flex space-x-2">
+                            <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                            <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                            <button onClick={handleDateSearch} className="px-4 py-2 bg-[#70aaf5] text-white rounded-md hover:bg-cyan-600">
+                                <Search className="text-black-500 " size={20} />
+                            </button>
+                        </div>
                     </div>
-                    <div className="flex space-x-2">
-                        <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                        <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                        <button onClick={handleDateSearch} className="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-blue-600">
-                            <Search className="text-black-500 " size={20} />
+                    <div className="flex justify-end space-x-2">
+                        <button className="ml-4 px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600" onClick={openAddModal}>
+                            <Plus className="mr-1" />
                         </button>
                     </div>
+
                 </div>
+
+                <h2 className="text-2xl font-bold mb-4 text-black">LISTE DES DEMANDES</h2>
+
 
                 <table className="min-w-full bg-white">
                     <thead>
-                        <tr className="w-full text-left bg-gray-200">
-                            <th className="p-2">N° DE DEMANDE</th>
-                            <th className="p-2">NOM DU CLIENT</th>
-                            <th className="p-2">DATE DE DEMANDE</th>
-                            <th className="p-2">NATURE DE DEMANDE</th>
-                            <th className="p-2">LONGUEUR</th>
-                            <th className="p-2">LARGEUR</th>
-                            <th className="p-2">LIEU DE CONSTRUCTION</th>
-                            <th className="p-2"></th>
-                            <th className="p-2"></th>
+                        <tr className="bg-cyan-700 text-gray-900 uppercase text-sm leading-normal">
+                            <th className="py-3 px-6 text-center">NUMERO</th>
+                            <th className="py-3 px-6 text-center">CLIENT</th>
+                            <th className="py-3 px-6 text-center">DATE</th>
+                            <th className="py-3 px-6 text-center">NATURE</th>
+                            <th className="py-3 px-6 text-center">LONGUEUR</th>
+                            <th className="py-3 px-6 text-center">LARGEUR</th>
+                            <th className="py-3 px-6 text-center">LIEU</th>
+                            <th className="py-3 px-6 text-center"></th>
+                            <th className="py-3 px-6 text-center"></th>
                         </tr>
                     </thead>
                     <tbody>
                         {Array.isArray(currentDemandes) && currentDemandes.map((data, i) => (
 
                             <tr key={i} className="border-t">
-                                <td className="py-3 px-6 text-left">{data.numDemande}</td>
-                                <td className="py-3 px-6 text-left">{data.nomClient}</td>
-                                <td className="py-3 px-6 text-left">{formatDate(data.dateDemande)}</td>
-                                <td className="py-3 px-6 text-left">{data.typeDemande}</td>
-                                <td className="py-3 px-6 text-left">{data.longueur}</td>
-                                <td className="py-3 px-6 text-left">{data.largeur}</td>
-                                <td className="py-3 px-6 text-left">{data.lieu}</td>
-                                <td className="py-3 px-6 text-left">
-                                    <div className="flex space-x-2"> {/* Conteneur flex avec espacement */}
-                                        <button className="flex items-center bg-blue-500 text-white px-2 py-1 rounded hover:bg-blue-600" onClick={() => openEditModal(data)}>
-                                            <Pencil className="mr-1" /> {/* Icône pour Modifier */}
-                                        </button>
-                                        <button className="flex items-center bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600" onClick={() => handleDelete(data.numDemande)}>
-                                            <Trash className="mr-1" /> {/* Icône pour Supprimer */}
-                                        </button>
-                                        <button className={`flex items-center px-2 py-1 rounded ${isCheckButtonDisabled ? 'bg-gray-400 cursor-not-allowed' : 'bg-green-500 hover:bg-green-600'
-                                            }`} onClick={() => openModal(data)} disabled={isCheckButtonDisabled}>
-                                            <Check className="mr-1" />
-                                        </button>
+                                <td className="py-3 px-6 text-center">{data.numDemande}</td>
+                                <td className="py-3 px-6 text-center">{data.nomClient}</td>
+                                <td className="py-3 px-6 text-center">{formatDate(data.dateDemande)}</td>
+                                <td className="py-3 px-6 text-center">{data.typeDemande}</td>
+                                <td className="py-3 px-6 text-center">{data.longueur}</td>
+                                <td className="py-3 px-6 text-center">{data.largeur}</td>
+                                <td className="py-3 px-6 text-center">{data.lieu}</td>
+                                <td className="py-3 px-6 text-center">
+                                    <div className="flex space-x-2">
+                                        {/* Bouton pour afficher/masquer les autres boutons */}
+                                        <button className="flex items-center bg-indigo-500 text-white px-2 py-1 rounded hover:bg-indigo-600" onClick={toggleButtons}>...</button>
+
+                                        {/* Affichage conditionnel des boutons */}
+                                        {showButtons && (
+                                            <div className="flex space-x-2">
+                                                <button className="flex items-center bg-indigo-500 text-white px-2 py-1 rounded hover:bg-indigo-600" onClick={() => openEditModal(data)}>
+                                                    <Pencil className="mr-1" /> {/* Icône pour Modifier */}
+                                                </button>
+                                                <button className="flex items-center bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600" onClick={() => handleDelete(data.numDemande)}>
+                                                    <Trash className="mr-1" /> {/* Icône pour Supprimer */}
+                                                </button>
+                                                <button className="flex items-center bg-cyan-500 hover:bg-cyan-600 px-2 py-1 rounded" onClick={() => openModal(data)}>
+                                                    <Check className="mr-1" />
+                                                </button>
+                                            </div>
+                                        )}
                                     </div>
                                 </td>
 
@@ -361,195 +516,199 @@ export default function Listdemande() {
                         </button>
                     ))}
                 </div>
+
+
+
                 {/* Modal for adding demande */}
                 <Modal isOpen={addModalIsOpen} onRequestClose={closeModal} className="fixed inset-0 flex justify-center items-center z-50">
-                <div className="max-w-2xl w-full p-6 bg-white rounded-lg shadow-lg">
-                    <h2 className="text-2xl font-bold mb-4">NOUVELLE DEMANDE</h2>
-                    <form onSubmit={handleAddSubmit}>
-                        <div className="mb-4">
-                            <label>Numero du Client :</label>
-                            <input type="text" className="w-full p-2 border border-gray-300 rounded" value={formState.numChrono} onChange={(e) =>
-                                setFormState({ ...formState, numChrono: e.target.value })} required />
-                        </div>
+                    <div className="max-w-2xl w-full p-6 bg-white rounded-lg shadow-lg">
+                        <h2 className="text-2xl font-bold mb-4">NOUVELLE DEMANDE</h2>
+                        <form onSubmit={handleAddSubmit}>
+                            <div className="mb-4">
+                                <label>Numero du Client :</label>
+                                <input type="text" className="w-full p-2 border border-gray-300 rounded" value={formState.numChrono} onChange={(e) =>
+                                    setFormState({ ...formState, numChrono: e.target.value })} required />
+                            </div>
 
-                        <div className="mb-4">
-                            <label>Date de la demande :</label>
-                            <input type="date" className="w-full p-2 border border-gray-300 rounded" value={formState.dateDemande} onChange={(e) =>
-                                setFormState({ ...formState, dateDemande: e.target.value })} required />
-                        </div>
+                            <div className="mb-4">
+                                <label>Date de la demande :</label>
+                                <input type="date" className="w-full p-2 border border-gray-300 rounded" value={formState.dateDemande} onChange={(e) =>
+                                    setFormState({ ...formState, dateDemande: e.target.value })} required />
+                            </div>
 
-                        <div className="mb-4">
-                            <label>Nature de la demande :</label>
-                            <select className="w-full p-2 border border-gray-300 rounded" value={formState.typeDemande} onChange={(e) =>
-                                setFormState({ ...formState, typeDemande: e.target.value })} required>
-                                <option value="">-- Sélectionner une nature de demande --</option>
-                                <option value="Etablissements hôteliers">Etablissements hôteliers</option>
-                                <option value="Etablissements culturels">Etablissements culturels</option>
-                                <option value="Etablissements nécessitant une étude d’impact environnemental">Etablissements nécessitant une étude d’impact environnemental</option>
-                                <option value="Etablissements industriels">Etablissements industriels</option>
-                                <option value="Etablissements recevant du public">Etablissements recevant du public</option>
-                                <option value="Autres">Autres</option>
-                            </select>
-                        </div>
+                            <div className="mb-4">
+                                <label>Nature de la demande :</label>
+                                <select className="w-full p-2 border border-gray-300 rounded" value={formState.typeDemande} onChange={(e) =>
+                                    setFormState({ ...formState, typeDemande: e.target.value })} required>
+                                    <option value="">-- Sélectionner une nature de demande --</option>
+                                    <option value="Etablissements hôteliers">Etablissements hôteliers</option>
+                                    <option value="Etablissements culturels">Etablissements culturels</option>
+                                    <option value="Etablissements nécessitant une étude d’impact environnemental">Etablissements nécessitant une étude d’impact environnemental</option>
+                                    <option value="Etablissements industriels">Etablissements industriels</option>
+                                    <option value="Etablissements recevant du public">Etablissements recevant du public</option>
+                                    <option value="Autres">Autres</option>
+                                </select>
+                            </div>
 
-                        <div className="mb-4">
-                            <label>Longueur du terrain :</label>
-                            <input type="number" step="0.01" className="w-full p-2 border border-gray-300 rounded" value={formState.longueur} onChange={(e) =>
-                                setFormState({ ...formState, longueur: e.target.value })} required />
-                        </div>
+                            <div className="mb-4">
+                                <label>Longueur du terrain :</label>
+                                <input type="number" step="0.01" className="w-full p-2 border border-gray-300 rounded" value={formState.longueur} onChange={(e) =>
+                                    setFormState({ ...formState, longueur: e.target.value })} required />
+                            </div>
 
-                        <div className="mb-4">
-                            <label>Largeur du terrain :</label>
-                            <input type="number" step="0.01" className="w-full p-2 border border-gray-300 rounded" value={formState.largeur} onChange={(e) =>
-                                setFormState({ ...formState, largeur: e.target.value })} required />
-                        </div>
+                            <div className="mb-4">
+                                <label>Largeur du terrain :</label>
+                                <input type="number" step="0.01" className="w-full p-2 border border-gray-300 rounded" value={formState.largeur} onChange={(e) =>
+                                    setFormState({ ...formState, largeur: e.target.value })} required />
+                            </div>
 
-                        <div className="mb-4">
-                            <label>Lieu de construction :</label>
-                            <input type="text" className="w-full p-2 border border-gray-300 rounded" value={formState.lieu} onChange={(e) =>
-                                setFormState({ ...formState, lieu: e.target.value })} required />
-                        </div>
+                            <div className="mb-4">
+                                <label>Lieu de construction :</label>
+                                <input type="text" className="w-full p-2 border border-gray-300 rounded" value={formState.lieu} onChange={(e) =>
+                                    setFormState({ ...formState, lieu: e.target.value })} required />
+                            </div>
 
-                        <button type="submit" className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">ENREGISTRER</button>
-                        <button type="button" className="ml-2 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600" onClick={closeModal}>Annuler</button>
-                    </form>
+                            <button type="submit" className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">ENREGISTRER</button>
+                            <button type="button" className="ml-2 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600" onClick={closeModal}>Annuler</button>
+                        </form>
                     </div>
                 </Modal>
 
                 {/* Modal for editing demande */}
                 <Modal isOpen={editModalIsOpen} onRequestClose={closeModal} className="fixed inset-0 flex justify-center items-center z-50">
-                <div className="max-w-2xl w-full p-6 bg-white rounded-lg shadow-lg">
-                    <h2 className="text-2xl font-bold mb-4">MODIFIER UNE DEMANDE</h2>
-                    <form onSubmit={handleEditSubmit}>
-                        <div className="mb-4">
-                            <label>Date de la demande :</label>
-                            <input type="text" className="w-full p-2 border border-gray-300 rounded" value={formatDate(formState.dateDemande)} onChange={(e) =>
-                                setFormState({ ...formState, dateDemande: e.target.value })} required />
-                        </div>
+                    <div className="max-w-2xl w-full p-6 bg-white rounded-lg shadow-lg">
+                        <h2 className="text-2xl font-bold mb-4">MODIFIER UNE DEMANDE</h2>
+                        <form onSubmit={handleEditSubmit}>
+                            <div className="mb-4">
+                                <label>Date de la demande :</label>
+                                <input type="text" className="w-full p-2 border border-gray-300 rounded" value={formatDate(formState.dateDemande)} onChange={(e) =>
+                                    setFormState({ ...formState, dateDemande: e.target.value })} required />
+                            </div>
 
-                        <div className="mb-4">
-                            <label>Nature de la demande :</label>
-                            <select className="w-full p-2 border border-gray-300 rounded" value={formState.typeDemande} onChange={(e) =>
-                                setFormState({ ...formState, typeDemande: e.target.value })} required>
-                                <option value="">-- Sélectionner une nature de demande --</option>
-                                <option value="Etablissements hôteliers">Etablissements hôteliers</option>
-                                <option value="Etablissements culturels">Etablissements culturels</option>
-                                <option value="Etablissements nécessitant une étude d’impact environnemental">Etablissements nécessitant une étude d’impact environnemental</option>
-                                <option value="Etablissements industriels">Etablissements industriels</option>
-                                <option value="Etablissements recevant du public">Etablissements recevant du public</option>
-                                <option value="Autres">Autres</option>
-                            </select>
-                        </div>
+                            <div className="mb-4">
+                                <label>Nature de la demande :</label>
+                                <select className="w-full p-2 border border-gray-300 rounded" value={formState.typeDemande} onChange={(e) =>
+                                    setFormState({ ...formState, typeDemande: e.target.value })} required>
+                                    <option value="">-- Sélectionner une nature de demande --</option>
+                                    <option value="Etablissements hôteliers">Etablissements hôteliers</option>
+                                    <option value="Etablissements culturels">Etablissements culturels</option>
+                                    <option value="Etablissements nécessitant une étude d’impact environnemental">Etablissements nécessitant une étude d’impact environnemental</option>
+                                    <option value="Etablissements industriels">Etablissements industriels</option>
+                                    <option value="Etablissements recevant du public">Etablissements recevant du public</option>
+                                    <option value="Autres">Autres</option>
+                                </select>
+                            </div>
 
-                        <div className="mb-4">
-                            <label>Longueur du terrain :</label>
-                            <input type="number" step="0.01" className="w-full p-2 border border-gray-300 rounded" value={formState.longueur} onChange={(e) =>
-                                setFormState({ ...formState, longueur: e.target.value })} required />
-                        </div>
+                            <div className="mb-4">
+                                <label>Longueur du terrain :</label>
+                                <input type="number" step="0.01" className="w-full p-2 border border-gray-300 rounded" value={formState.longueur} onChange={(e) =>
+                                    setFormState({ ...formState, longueur: e.target.value })} required />
+                            </div>
 
-                        <div className="mb-4">
-                            <label>Largeur du terrain :</label>
-                            <input type="number" step="0.01" className="w-full p-2 border border-gray-300 rounded" value={formState.largeur} onChange={(e) =>
-                                setFormState({ ...formState, largeur: e.target.value })} required />
-                        </div>
+                            <div className="mb-4">
+                                <label>Largeur du terrain :</label>
+                                <input type="number" step="0.01" className="w-full p-2 border border-gray-300 rounded" value={formState.largeur} onChange={(e) =>
+                                    setFormState({ ...formState, largeur: e.target.value })} required />
+                            </div>
 
-                        <div className="mb-4">
-                            <label>Lieu de construction :</label>
-                            <input type="text" className="w-full p-2 border border-gray-300 rounded" value={formState.lieu} onChange={(e) =>
-                                setFormState({ ...formState, lieu: e.target.value })} required />
-                        </div>
+                            <div className="mb-4">
+                                <label>Lieu de construction :</label>
+                                <input type="text" className="w-full p-2 border border-gray-300 rounded" value={formState.lieu} onChange={(e) =>
+                                    setFormState({ ...formState, lieu: e.target.value })} required />
+                            </div>
 
-                        <button type="submit" className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">ENREGISTRER</button>
-                        <button type="button" className="ml-2 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600" onClick={closeModal}>Annuler</button>
-                    </form>
-                </div>
+                            <button type="submit" className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">ENREGISTRER</button>
+                            <button type="button" className="ml-2 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600" onClick={closeModal}>Annuler</button>
+                        </form>
+                    </div>
                 </Modal>
 
 
                 {/* Modal for 'Devis' and 'Avis de paiement' */}
                 <Modal isOpen={modalIsOpen} onRequestClose={closeModal} className="fixed inset-0 flex justify-center items-center z-50">
-                <div className="max-w-2xl w-full p-6 bg-white rounded-lg shadow-lg">
-                    <h2 className="text-xl font-bold mb-4">Devis de la demande numero - {selectedDemande?.numDemande}</h2>
+                    <div className="max-w-2xl w-full p-6 bg-white rounded-lg shadow-lg">
+                        <h2 className="text-xl font-bold mb-4">Devis de la demande numero - {selectedDemande?.numDemande}</h2>
 
-                    <div className="flex space-x-4 mb-4">
-                        <button className={`px-4 py-2 rounded ${selectedTab === 'devis' ? 'bg-blue-500 text-white' : 'bg-gray-200'}`} onClick={() => handleTabClick('devis')}>
-                            Devis
-                        </button>
-                        <button className={`px-4 py-2 rounded ${selectedTab === 'avis' ? 'bg-blue-500 text-white' : 'bg-gray-200'}`} onClick={() => isDevisSubmitted && handleTabClick('avis')} // Only allow click if Devis is submitted
-                            disabled={!isDevisSubmitted} style={{ cursor: isDevisSubmitted ? 'pointer' : 'not-allowed', opacity: isDevisSubmitted ? 1 : 0.5 }}>
-                            Avis de Paiement
-                        </button>
-                    </div>
-
-                    {selectedTab === 'devis' && (
-                        <div>
-                            <h3 className="text-lg font-semibold mb-2">Formulaire de Devis</h3>
-                            <form onSubmit={(e) => handleDevisSubmit(e, selectedDemande)}>
-                                {/* Champ Numéro de Devis */}
-                                <div className="mb-4">
-                                    <label className="block">Numéro de Devis :</label>
-                                    <input type="text" className="mt-1 p-2 border border-gray-300 rounded w-full" value={selectedDemande?.numDevis || ''}
-                                        onChange={(e) => setSelectedDemande({ ...selectedDemande, numDevis: e.target.value })} required />
-                                </div>
-
-                                {/* Champ Prix Longueur (calculé) */}
-                                <div className="mb-4">
-                                    <label className="block">Prix Longueur :</label>
-                                    <input type="number" step="0.01" className="mt-1 p-2 border border-gray-300 rounded w-full" value={prixLongueur || ''}
-                                        readOnly />
-                                </div>
-
-                                {/* Champ Prix Largeur (calculé) */}
-                                <div className="mb-4">
-                                    <label className="block">Prix Largeur :</label>
-                                    <input type="number" step="0.01" className="mt-1 p-2 border border-gray-300 rounded w-full" value={prixLargeur || ''}
-                                        readOnly />
-                                </div>
-
-                                {/* Champ Montant Total (calculé) */}
-                                <div className="mb-4">
-                                    <label className="block">Montant Total :</label>
-                                    <input type="number" step="0.01" className="mt-1 p-2 border border-gray-300 rounded w-full" value={montant || ''}
-                                        readOnly />
-                                </div>
-
-                                {/* Bouton Enregistrer */}
-                                <button type="submit" className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">Enregistrer Devis</button>
-                                <button type="button" className="ml-2 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600" onClick={closeModal}>Fermer</button>
-                            </form>
+                        <div className="flex space-x-4 mb-4">
+                            <button className={`px-4 py-2 rounded ${selectedTab === 'devis' ? 'bg-blue-500 text-white' : 'bg-gray-200'}`} onClick={() => handleTabClick('devis')}>
+                                Devis
+                            </button>
+                            <button className={`px-4 py-2 rounded ${selectedTab === 'avis' ? 'bg-blue-500 text-white' : 'bg-gray-200'}`} onClick={() => isDevisSubmitted && handleTabClick('avis')} // Only allow click if Devis is submitted
+                                disabled={!isDevisSubmitted} style={{ cursor: isDevisSubmitted ? 'pointer' : 'not-allowed', opacity: isDevisSubmitted ? 1 : 0.5 }}>
+                                Avis de Paiement
+                            </button>
                         </div>
-                    )}
 
-                    {selectedTab === 'avis' && (
-                        <div>
-                            <h3 className="text-lg font-semibold mb-2">Formulaire d'Avis de Paiement</h3>
-                            <form onSubmit={(e) => handleAvisSubmit(e, selectedDemande)}>
-                                {/* Avis de Paiement form fields */}
-                                <div className="mb-4">
-                                    <label className="block">Numéro de l'Avis :</label>
-                                    <input type="text" className="mt-1 p-2 border border-gray-300 rounded w-full" value={selectedDemande?.numAvis || ''}
-                                        onChange={(e) => setSelectedDemande({ ...selectedDemande, numAvis: e.target.value })} required />
-                                </div>
-                                <div className="mb-4">
-                                    <label className="block">Numéro du devis :</label>
-                                    <input type="text" className="mt-1 p-2 border border-gray-300 rounded w-full" value={selectedDemande?.numDevis || ''} readOnly required />
-                                </div>
+                        {selectedTab === 'devis' && (
+                            <div>
+                                <h3 className="text-lg font-semibold mb-2">Formulaire de Devis</h3>
+                                <form onSubmit={(e) => handleDevisSubmit(e, selectedDemande)}>
+                                    {/* Prix Unitaire Longueur */}
+                                    <div className="mb-4">
+                                        <label className="block">Prix Unitaire Longueur :</label>
+                                        <input type="number" className="mt-1 p-2 border border-gray-300 rounded w-full" value={selectedDemande?.prixUnitaireLongueur || ''} onChange={(e) => handleInputChange(e, 'prixUnitaireLongueur')} required />
+                                    </div>
 
-                                <div className="mb-4">
-                                    <label className="block">Numero de la quittance :</label>
-                                    <input type="integer" className="mt-1 p-2 border border-gray-300 rounded w-full" value={selectedDemande?.numQuittance || ''}
-                                        onChange={(e) => setSelectedDemande({ ...selectedDemande, numQuittance: e.target.value })} required />
-                                </div>
-                                <div className="mb-4">
-                                    <label className="block">Date de l'avis de paiement :</label>
-                                    <input type="date" className="mt-1 p-2 border border-gray-300 rounded w-full" value={selectedDemande?.dateAvis || ''}
-                                        onChange={(e) => setSelectedDemande({ ...selectedDemande, dateAvis: e.target.value })} required />
-                                </div>
-                                <button type="submit" className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">Enregistrer Avis</button>
-                                <button type="button" className="ml-2 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600" onClick={closeModal}>Fermer</button>
-                            </form>
-                        </div>
-                    )}
+                                    {/* Prix Unitaire Largeur */}
+                                    <div className="mb-4">
+                                        <label className="block">Prix Unitaire Largeur :</label>
+                                        <input type="number" className="mt-1 p-2 border border-gray-300 rounded w-full" value={selectedDemande?.prixUnitaireLargeur || ''} onChange={(e) => handleInputChange(e, 'prixUnitaireLargeur')} required />
+                                    </div>
+
+                                    {/* Prix Longueur (calculé) */}
+                                    <div className="mb-4">
+                                        <label className="block">Prix Longueur :</label>
+                                        <input type="number" step="0.01" className="mt-1 p-2 border border-gray-300 rounded w-full" value={prixLongueur || ''} readOnly />
+                                    </div>
+
+                                    {/* Prix Largeur (calculé) */}
+                                    <div className="mb-4">
+                                        <label className="block">Prix Largeur :</label>
+                                        <input type="number" step="0.01" className="mt-1 p-2 border border-gray-300 rounded w-full" value={prixLargeur || ''} readOnly />
+                                    </div>
+
+                                    {/* Montant Total (calculé) */}
+                                    <div className="mb-4">
+                                        <label className="block">Montant Total :</label>
+                                        <input type="number" step="0.01" className="mt-1 p-2 border border-gray-300 rounded w-full" value={montant || ''} readOnly />
+                                    </div>
+
+                                    <button type="submit" className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">Enregistrer Devis</button>
+                                    <button type="button" className="ml-2 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600" onClick={closeModal}>Fermer</button>
+                                </form>
+                            </div>
+                        )}
+
+
+                        {selectedTab === 'avis' && (
+                            <div>
+                                <h3 className="text-lg font-semibold mb-2">Formulaire d'Avis de Paiement</h3>
+                                <form onSubmit={(e) => handleAvisSubmit(e, selectedDemande)}>
+                                    {/* Avis de Paiement form fields */}
+
+                                    {/* Champ pré-rempli Numéro du devis */}
+                                    <div className="mb-4">
+                                        <label className="block">Numéro du devis :</label>
+                                        <input type="text" className="mt-1 p-2 border border-gray-300 rounded w-full"
+                                            value={selectedDemande?.numDevis || ''}
+                                            readOnly
+                                            required />
+                                    </div>
+                                    <div className="mb-4">
+                                        <label className="block">Numero de la quittance :</label>
+                                        <input type="integer" className="mt-1 p-2 border border-gray-300 rounded w-full" value={selectedDemande?.numQuittance || ''}
+                                            onChange={(e) => setSelectedDemande({ ...selectedDemande, numQuittance: e.target.value })} required />
+                                    </div>
+                                    <div className="mb-4">
+                                        <label className="block">Date de l'avis de paiement :</label>
+                                        <input type="date" className="mt-1 p-2 border border-gray-300 rounded w-full" value={selectedDemande?.dateAvis || ''}
+                                            onChange={(e) => setSelectedDemande({ ...selectedDemande, dateAvis: e.target.value })} required />
+                                    </div>
+                                    <button type="submit" className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">Enregistrer Avis</button>
+                                    <button type="button" className="ml-2 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600" onClick={closeModal}>Fermer</button>
+                                </form>
+                            </div>
+                        )}
                     </div>
                 </Modal>
 

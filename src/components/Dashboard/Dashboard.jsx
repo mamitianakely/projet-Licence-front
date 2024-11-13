@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Menu, User, LogOut, Home, Users, FileText, FileSignature, CreditCard, Building, CheckCircle } from 'lucide-react';
+import logopermit from '../../assets/logopermit.png'
 
 const Dashboard = ({ children }) => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -36,15 +37,16 @@ const Dashboard = ({ children }) => {
   return (
     <div className="flex h-screen bg-indigo-50">
       {/* Sidebar */}
-      <aside className={`bg-gray-900 text-white transition-all duration-300 ease-in-out ${sidebarOpen ? 'w-64' : 'w-20'} h-full space-y-6 py-7 px-2 absolute inset-y-0 left-0`}>
+      <aside className={`bg-[#123570] text-white transition-all duration-300 ease-in-out ${sidebarOpen ? 'w-64' : 'w-20'} h-full space-y-6 py-7 px-2 absolute inset-y-0 left-0`}>
         <div className="flex items-center justify-between mb-6">
-          <div className={`text-2xl font-semibold text-center ${sidebarOpen ? '' : 'hidden'}`}>PermisTrack</div>
+          <div className={`text-3xl font-semibold text-black text-center flex items-center ${sidebarOpen ? '' : 'hidden'}`}>
+            <img src={logopermit} alt="" className="w-8 h-8 mr-2 " />PermisTrack</div>
         </div>
         <nav>
           {navItems.map((item) => (
-            <Link key={item.path} to={item.path} className={`flex items-center py-2.5 px-4 rounded transition duration-200 hover:bg-gray-700 ${location.pathname === item.path ? 'bg-gray-700' : ''}`}
+            <Link key={item.path} to={item.path} className={`flex items-center text-gray-950 py-2.5 px-4 rounded transition duration-200 hover:bg-[#c6cedc] ${location.pathname === item.path ? 'bg-[#c6cedc]' : ''}`}
             >
-              <item.icon className={`inline-block ${sidebarOpen ? '' : 'mx-auto'}`} size={20} />
+              <item.icon className={`inline-block ${sidebarOpen ? '' : 'mx-auto'}`} size={25} />
               <span className={`ml-2 ${sidebarOpen ? '' : 'hidden'}`}>{item.label}</span>
             </Link>
           ))}
@@ -54,7 +56,7 @@ const Dashboard = ({ children }) => {
       {/* Main Content */}
       <div className={`flex-1 flex flex-col overflow-hidden transition-all duration-300 ease-in-out ${sidebarOpen ? 'ml-64' : 'ml-20'}`}>
         {/* Navbar */}
-        <header className="bg-white shadow-md">
+        <header className="bg-[#a5baf3] shadow-md">
           <div className="flex items-center justify-between p-4">
             <div className="flex items-center">
               <button onClick={toggleSidebar} className="text-gray-500 focus:outline-none focus:text-gray-700 hidden md:flex">
@@ -66,7 +68,7 @@ const Dashboard = ({ children }) => {
               <div className="relative">
                 <button className="flex items-center text-gray-700 focus:outline-none" onClick={handleDropdownToggle}>
                   <User className="h-6 w-6 text-gray-700" />
-                  <span className="ml-2">{username ? username : 'Utilisateur'}</span>
+                  <span className="ml-2 bg-[#c6cedc] py-2.5 px-4 rounded transition duration-200 hover:bg-[#5b85f8]">{username ? username : 'Utilisateur'}</span>
                 </button>
                 {isDropdownOpen && (
                   <div className="absolute right-0 mt-2 w-48 bg-white border rounded shadow-lg">

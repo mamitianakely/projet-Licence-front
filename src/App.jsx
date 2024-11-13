@@ -29,7 +29,12 @@ function App() {
     <div className="App">
       <BrowserRouter>
         <Routes>
-            <Route path='/' element={<Login />}></Route>
+
+
+
+          <Route path="/" element={<Login />} />
+          <Route element={<ProtectedRoute />}>
+            <Route path="/dash" element={<Dash />} />
             <Route path='/register' element={<Register />}></Route>
             <Route path='/client' element={<Client />}></Route>
             <Route path='/listclient' element={<Listclient />}></Route>
@@ -46,14 +51,9 @@ function App() {
             <Route path="/listdevis" element={<Listdevis />} />
             <Route path="/listavis" element={<Listavis />} />
             <Route path="/listpermis" element={<Listpermis />} />
-            <Route path="/dash" element={<Dash />} />
-            
-            <Route path="/login" element={<Login />} />
-            <Route element={<ProtectedRoute />}>
-                <Route path="/dash" element={<Dash />} />
-            </Route>
+          </Route>
         </Routes>
-        
+
       </BrowserRouter>
     </div>
   );
