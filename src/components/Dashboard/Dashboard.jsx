@@ -29,7 +29,7 @@ const Dashboard = ({ children }) => {
     { path: '/listdemande', icon: FileText, label: 'Demande' },
     { path: '/listclient', icon: Users, label: 'Client' },
     { path: '/listdevis', icon: FileSignature, label: 'Devis' },
-    { path: '/listavis', icon: CreditCard, label: 'Avis de paiement' },
+    // { path: '/listavis', icon: CreditCard, label: 'Avis de paiement' },
     { path: '/listpermis', icon: Building, label: 'Permis' },
     { path: '/listverificateur', icon: CheckCircle, label: 'Verificateur' },
   ];
@@ -37,9 +37,9 @@ const Dashboard = ({ children }) => {
   return (
     <div className="flex h-screen bg-indigo-50">
       {/* Sidebar */}
-      <aside className={`bg-[#123570] text-white transition-all duration-300 ease-in-out ${sidebarOpen ? 'w-64' : 'w-20'} h-full space-y-6 py-7 px-2 absolute inset-y-0 left-0`}>
+      <aside className={`bg-[#337cc1] text-white transition-all duration-300 ease-in-out ${sidebarOpen ? 'w-64' : 'w-20'} h-full space-y-6 py-7 px-2 absolute inset-y-0 left-0`}>
         <div className="flex items-center justify-between mb-6">
-          <div className={`text-3xl font-semibold text-black text-center flex items-center ${sidebarOpen ? '' : 'hidden'}`}>
+          <div className={`text-3xl font-semibold text-black text-center mb-8 flex items-center ${sidebarOpen ? '' : 'hidden'}`}>
             <img src={logopermit} alt="" className="w-8 h-8 mr-2 " />PermisTrack</div>
         </div>
         <nav>

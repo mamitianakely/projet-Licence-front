@@ -55,32 +55,42 @@ export default function Listpermis() {
         }
     };
 
-    const handleDelete = async (numPermis) => {
-        confirmAlert({
-            title: "Confirmation de suppression",
-            message: "Voulez-vous vraiment supprimer ce permis ?",
-            buttons: [
-                {
-                    label: "Oui",
-                    onClick: async () => {
-                        try {
-                            await axios.delete(`http://localhost:5000/api/avis/${numPermis}`);
-                            // Mettre à jour l'interface après suppression
-                        } catch (error) {
-                            console.error(error);
-                        }
-                    },
-                },
-                {
-                    label: "Non",
-                    onClick: () => console.log("Suppression annulée")
-                }
-            ],
-            overlayClassName: "custom-overlay",
-            className: "custom-ui",
-        });
-    };
+    // const handleDelete = async (numPermis) => {
+    //     confirmAlert({
+    //         title: "Confirmation de suppression",
+    //         message: "Voulez-vous vraiment supprimer ce permis ?",
+    //         buttons: [
+    //             {
+    //                 label: "Oui",
+    //                 onClick: async () => {
+    //                     try {
+    //                         await axios.delete(`http://localhost:5000/api/permis/${numPermis}`);
+    //                         // Mettre à jour l'interface après suppression
+    //                     } catch (error) {
+    //                         console.error(error);
+    //                     }
+    //                 },
+    //             },
+    //             {
+    //                 label: "Non",
+    //                 onClick: () => console.log("Suppression annulée")
+    //             }
+    //         ],
+    //         overlayClassName: "custom-overlay",
+    //         className: "custom-ui",
+    //     });
+    // };
 
+    const handleDelete = async (numPermis) => {
+        try {
+          const response = await axios.delete(`http://localhost:5000/api/permis/${numPermis}`);
+          console.log(response.data);
+          // Actualiser la liste des permis après suppression
+          setPermis(prevPermis => prevPermis.filter(permis => permis.numPermis !== numPermis));
+        } catch (error) {
+          console.error('Erreur lors de la suppression du permis:', error);
+        }
+      };
 
     const handleDownloadPdf = async (numPermis) => {
        // Afficher la boîte de confirmation avant de télécharger le PDF
@@ -132,7 +142,7 @@ export default function Listpermis() {
 
         return (
             matchesSearchTerm(data.nomClient) ||
-            matchesSearchTerm(data.numAvis) ||
+            matchesSearchTerm(data.numDevis) ||
             matchesSearchTerm(data.numQuittance) ||
             matchesSearchTerm(data.montant) ||
             matchesSearchTerm(data.lieu) ||
@@ -184,7 +194,7 @@ export default function Listpermis() {
                         <tr className="bg-cyan-700 text-gray-900 uppercase text-sm leading-normal">
                             <th className="py-3 px-6 text-center">NUMERO</th>
                             <th className="py-3 px-6 text-center">CLIENT</th>
-                            <th className="py-3 px-6 text-center">AVIS CORRESPONDANT</th>
+                            <th className="py-3 px-6 text-center">DEVIS CORRESPONDANT</th>
                             <th className="py-3 px-6 text-center">QUITTANCE</th>
                             <th className="py-3 px-6 text-center">DATE</th>
                             <th className="py-3 px-6 text-center">MONTANT</th>
@@ -197,7 +207,7 @@ export default function Listpermis() {
                             <tr key={i} className="border-t">
                                 <td className="py-3 px-6 text-center">{data.numPermis}</td>
                                 <td className="py-3 px-6 text-center">{data.nomClient}</td>
-                                <td className="py-3 px-6 text-center">{data.numAvis}</td>
+                                <td className="py-3 px-6 text-center">{data.numDevis}</td>
                                 <td className="py-3 px-6 text-center">{data.numQuittance}</td>
                                 <td className="py-3 px-6 text-center">{formatDate(data.datePermis)}</td>
                                 <td className="py-3 px-6 text-center">{data.montant}</td>
@@ -213,7 +223,7 @@ export default function Listpermis() {
                                         <button className="flex items-center bg-green-500 text-white px-2 py-1 rounded hover:bg-green-600" onClick={() => handleDownloadPdf(data.numPermis)}>
                                             <FileText className="mr-1" />
                                         </button>
-                                        <button className="flex items-center bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600" onClick={() => handleDelete(data.numAvis)}>
+                                        <button className="flex items-center bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600" onClick={() => handleDelete(data.numPermis)}>
                                             <Trash className="mr-1" />
                                         </button>
                                     </div>

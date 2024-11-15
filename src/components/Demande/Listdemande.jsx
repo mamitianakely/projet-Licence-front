@@ -19,7 +19,6 @@ export default function Listdemande() {
     const [prixLargeur, setPrixLargeur] = useState(0);
     const [montant, setMontant] = useState(0);
     const [isDevisCreated, setIsDevisCreated] = useState(false); // Devis créé ou non
-    const [isAvisCreated, setIsAvisCreated] = useState(false); // Avis créé ou non
     const [isDevisSubmitted, setIsDevisSubmitted] = useState(false); // Suivi de la soumission du devis
 
     const [showButtons, setShowButtons] = useState(false);
@@ -31,7 +30,7 @@ export default function Listdemande() {
     const [endDate, setEndDate] = useState('');
 
     const [currentPage, setCurrentPage] = useState(1);
-    const itemsPerPage = 5;
+    const itemsPerPage = 3;
 
     const [formState, setFormState] = useState({
         numDemande: '',
@@ -42,6 +41,7 @@ export default function Listdemande() {
         largeur: '',
         lieu: ''
     });
+    
     const [selectedDemande, setSelectedDemande] = useState(null); // Stores selected demand for editing
     const openModal = (demandeData) => {
         // Récupérer les valeurs de longueur et largeur depuis les données de la demande sélectionnée
@@ -89,6 +89,7 @@ export default function Listdemande() {
     };
 
 
+    // Récupérer les demandes
     useEffect(() => {
         const fetchDemandes = async () => {
             try {
@@ -107,6 +108,7 @@ export default function Listdemande() {
     };
 
 
+    //recherche deux dates
     const handleDateSearch = async () => {
         // Vérifie que les deux dates sont présentes
         if (!startDate || !endDate) {
@@ -126,6 +128,7 @@ export default function Listdemande() {
         }
     };
 
+    // supprimer une demande
     const handleDelete = async (numDemande) => {
         // Affiche une boîte de dialogue de confirmation
         confirmAlert({
@@ -240,7 +243,7 @@ export default function Listdemande() {
 
             // Réinitialiser les états pour rendre le bouton Check réactif à la création d'une nouvelle demande
             setIsDevisCreated(false);
-            setIsAvisCreated(false);
+            // setIsAvisCreated(false);
         } catch (err) {
             console.error(err);
             toast.error('Erreur lors de l’ajout du demande.', {
@@ -361,8 +364,9 @@ export default function Listdemande() {
 
 
             setIsDevisCreated(true);
-            setIsDevisSubmitted(true); // Le devis a été soumis
-            handleTabClick('avis');
+            setIsDevisSubmitted(true);
+            closeModal(true); // Le devis a été soumis
+            // handleTabClick('avis');
         } catch (error) {
             console.error('Erreur:', error.response ? error.response.data : error.message);
             toast.error('Erreur lors de l’ajout du devis.', {
@@ -378,51 +382,51 @@ export default function Listdemande() {
         }
     };
 
-    //Ajouter avis
-    const handleAvisSubmit = async (e) => {
-        e.preventDefault();
+    // //Ajouter avis
+    // const handleAvisSubmit = async (e) => {
+    //     e.preventDefault();
 
-        const avisData = {
-            numAvis: selectedDemande.numAvis,
-            numDevis: selectedDemande.numDevis,
-            numQuittance: selectedDemande.numQuittance,
-            dateAvis: selectedDemande.dateAvis, // Date d'aujourd'hui
-        };
+    //     const avisData = {
+    //         numAvis: selectedDemande.numAvis,
+    //         numDevis: selectedDemande.numDevis,
+    //         numQuittance: selectedDemande.numQuittance,
+    //         dateAvis: selectedDemande.dateAvis, // Date d'aujourd'hui
+    //     };
 
-        try {
-            const response = await axios.post('http://localhost:5000/api/avis', avisData, {
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-            });
+    //     try {
+    //         const response = await axios.post('http://localhost:5000/api/avis', avisData, {
+    //             headers: {
+    //                 'Content-Type': 'application/json',
+    //             },
+    //         });
 
-            setIsAvisCreated(true);
-            closeModal(); // Fermer le modal après la soumission de l'avis
-            // Afficher une notification de succès avec react-toastify
-            toast.success('Avis de paiement ajouté avec succès!', {
-                position: "top-right",
-                autoClose: 3000,
-                hideProgressBar: false,
-                closeOnClick: true,
-                pauseOnHover: true,
-                draggable: true,
-                progress: undefined,
-                theme: "colored"
-            })
-        } catch (error) {
-            console.error('Erreur:', error.response ? error.response.data : error.message);
-            toast.error('Erreur lors de l’ajout de Avis de paiement.', {
-                position: "top-right",
-                autoClose: 3000,
-                hideProgressBar: false,
-                closeOnClick: true,
-                pauseOnHover: true,
-                draggable: true,
-                progress: undefined,
-                theme: "colored"
-            });
-        }
-    };
+    //         setIsAvisCreated(true);
+    //         closeModal(); // Fermer le modal après la soumission de l'avis
+    //         // Afficher une notification de succès avec react-toastify
+    //         toast.success('Avis de paiement ajouté avec succès!', {
+    //             position: "top-right",
+    //             autoClose: 3000,
+    //             hideProgressBar: false,
+    //             closeOnClick: true,
+    //             pauseOnHover: true,
+    //             draggable: true,
+    //             progress: undefined,
+    //             theme: "colored"
+    //         })
+    //     } catch (error) {
+    //         console.error('Erreur:', error.response ? error.response.data : error.message);
+    //         toast.error('Erreur lors de l’ajout de Avis de paiement.', {
+    //             position: "top-right",
+    //             autoClose: 3000,
+    //             hideProgressBar: false,
+    //             closeOnClick: true,
+    //             pauseOnHover: true,
+    //             draggable: true,
+    //             progress: undefined,
+    //             theme: "colored"
+    //         });
+    //     }
+    // };
 
     return (
 
@@ -525,6 +529,12 @@ export default function Listdemande() {
                         <h2 className="text-2xl font-bold mb-4">NOUVELLE DEMANDE</h2>
                         <form onSubmit={handleAddSubmit}>
                             <div className="mb-4">
+                                <label>Numero de la demande :</label>
+                                <input type="text" className="w-full p-2 border border-gray-300 rounded" value={formState.numDemande} onChange={(e) =>
+                                    setFormState({ ...formState, numDemande: e.target.value })} required />
+                            </div>
+
+                            <div className="mb-4">
                                 <label>Numero du Client :</label>
                                 <input type="text" className="w-full p-2 border border-gray-300 rounded" value={formState.numChrono} onChange={(e) =>
                                     setFormState({ ...formState, numChrono: e.target.value })} required />
@@ -624,94 +634,57 @@ export default function Listdemande() {
                 </Modal>
 
 
-                {/* Modal for 'Devis' and 'Avis de paiement' */}
+                {/* Modal for 'Devis' */}
                 <Modal isOpen={modalIsOpen} onRequestClose={closeModal} className="fixed inset-0 flex justify-center items-center z-50">
                     <div className="max-w-2xl w-full p-6 bg-white rounded-lg shadow-lg">
-                        <h2 className="text-xl font-bold mb-4">Devis de la demande numero - {selectedDemande?.numDemande}</h2>
+                        <h2 className="text-xl font-bold mb-4">Devis de la demande numéro - {selectedDemande?.numDemande}</h2>
 
                         <div className="flex space-x-4 mb-4">
-                            <button className={`px-4 py-2 rounded ${selectedTab === 'devis' ? 'bg-blue-500 text-white' : 'bg-gray-200'}`} onClick={() => handleTabClick('devis')}>
+                            <button className="px-4 py-2 rounded bg-blue-500 text-white">
                                 Devis
-                            </button>
-                            <button className={`px-4 py-2 rounded ${selectedTab === 'avis' ? 'bg-blue-500 text-white' : 'bg-gray-200'}`} onClick={() => isDevisSubmitted && handleTabClick('avis')} // Only allow click if Devis is submitted
-                                disabled={!isDevisSubmitted} style={{ cursor: isDevisSubmitted ? 'pointer' : 'not-allowed', opacity: isDevisSubmitted ? 1 : 0.5 }}>
-                                Avis de Paiement
                             </button>
                         </div>
 
-                        {selectedTab === 'devis' && (
-                            <div>
-                                <h3 className="text-lg font-semibold mb-2">Formulaire de Devis</h3>
-                                <form onSubmit={(e) => handleDevisSubmit(e, selectedDemande)}>
-                                    {/* Prix Unitaire Longueur */}
-                                    <div className="mb-4">
-                                        <label className="block">Prix Unitaire Longueur :</label>
-                                        <input type="number" className="mt-1 p-2 border border-gray-300 rounded w-full" value={selectedDemande?.prixUnitaireLongueur || ''} onChange={(e) => handleInputChange(e, 'prixUnitaireLongueur')} required />
-                                    </div>
+                        {/* Section du formulaire de Devis */}
+                        <div>
+                            <h3 className="text-lg font-semibold mb-2">Formulaire de Devis</h3>
+                            <form onSubmit={(e) => handleDevisSubmit(e, selectedDemande)}>
+                                {/* Prix Unitaire Longueur */}
+                                <div className="mb-4">
+                                    <label className="block">Prix Unitaire Longueur :</label>
+                                    <input type="number" className="mt-1 p-2 border border-gray-300 rounded w-full" value={selectedDemande?.prixUnitaireLongueur || ''} onChange={(e) => handleInputChange(e, 'prixUnitaireLongueur')} required />
+                                </div>
 
-                                    {/* Prix Unitaire Largeur */}
-                                    <div className="mb-4">
-                                        <label className="block">Prix Unitaire Largeur :</label>
-                                        <input type="number" className="mt-1 p-2 border border-gray-300 rounded w-full" value={selectedDemande?.prixUnitaireLargeur || ''} onChange={(e) => handleInputChange(e, 'prixUnitaireLargeur')} required />
-                                    </div>
+                                {/* Prix Unitaire Largeur */}
+                                <div className="mb-4">
+                                    <label className="block">Prix Unitaire Largeur :</label>
+                                    <input type="number" className="mt-1 p-2 border border-gray-300 rounded w-full" value={selectedDemande?.prixUnitaireLargeur || ''} onChange={(e) => handleInputChange(e, 'prixUnitaireLargeur')} required />
+                                </div>
 
-                                    {/* Prix Longueur (calculé) */}
-                                    <div className="mb-4">
-                                        <label className="block">Prix Longueur :</label>
-                                        <input type="number" step="0.01" className="mt-1 p-2 border border-gray-300 rounded w-full" value={prixLongueur || ''} readOnly />
-                                    </div>
+                                {/* Prix Longueur (calculé) */}
+                                <div className="mb-4">
+                                    <label className="block">Prix Longueur :</label>
+                                    <input type="number" step="0.01" className="mt-1 p-2 border border-gray-300 rounded w-full" value={prixLongueur || ''} readOnly />
+                                </div>
 
-                                    {/* Prix Largeur (calculé) */}
-                                    <div className="mb-4">
-                                        <label className="block">Prix Largeur :</label>
-                                        <input type="number" step="0.01" className="mt-1 p-2 border border-gray-300 rounded w-full" value={prixLargeur || ''} readOnly />
-                                    </div>
+                                {/* Prix Largeur (calculé) */}
+                                <div className="mb-4">
+                                    <label className="block">Prix Largeur :</label>
+                                    <input type="number" step="0.01" className="mt-1 p-2 border border-gray-300 rounded w-full" value={prixLargeur || ''} readOnly />
+                                </div>
 
-                                    {/* Montant Total (calculé) */}
-                                    <div className="mb-4">
-                                        <label className="block">Montant Total :</label>
-                                        <input type="number" step="0.01" className="mt-1 p-2 border border-gray-300 rounded w-full" value={montant || ''} readOnly />
-                                    </div>
+                                {/* Montant Total (calculé) */}
+                                <div className="mb-4">
+                                    <label className="block">Montant Total :</label>
+                                    <input type="number" step="0.01" className="mt-1 p-2 border border-gray-300 rounded w-full" value={montant || ''} readOnly />
+                                </div>
 
-                                    <button type="submit" className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">Enregistrer Devis</button>
-                                    <button type="button" className="ml-2 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600" onClick={closeModal}>Fermer</button>
-                                </form>
-                            </div>
-                        )}
-
-
-                        {selectedTab === 'avis' && (
-                            <div>
-                                <h3 className="text-lg font-semibold mb-2">Formulaire d'Avis de Paiement</h3>
-                                <form onSubmit={(e) => handleAvisSubmit(e, selectedDemande)}>
-                                    {/* Avis de Paiement form fields */}
-
-                                    {/* Champ pré-rempli Numéro du devis */}
-                                    <div className="mb-4">
-                                        <label className="block">Numéro du devis :</label>
-                                        <input type="text" className="mt-1 p-2 border border-gray-300 rounded w-full"
-                                            value={selectedDemande?.numDevis || ''}
-                                            readOnly
-                                            required />
-                                    </div>
-                                    <div className="mb-4">
-                                        <label className="block">Numero de la quittance :</label>
-                                        <input type="integer" className="mt-1 p-2 border border-gray-300 rounded w-full" value={selectedDemande?.numQuittance || ''}
-                                            onChange={(e) => setSelectedDemande({ ...selectedDemande, numQuittance: e.target.value })} required />
-                                    </div>
-                                    <div className="mb-4">
-                                        <label className="block">Date de l'avis de paiement :</label>
-                                        <input type="date" className="mt-1 p-2 border border-gray-300 rounded w-full" value={selectedDemande?.dateAvis || ''}
-                                            onChange={(e) => setSelectedDemande({ ...selectedDemande, dateAvis: e.target.value })} required />
-                                    </div>
-                                    <button type="submit" className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">Enregistrer Avis</button>
-                                    <button type="button" className="ml-2 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600" onClick={closeModal}>Fermer</button>
-                                </form>
-                            </div>
-                        )}
+                                <button type="submit" className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">Enregistrer Devis</button>
+                                <button type="button" className="ml-2 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600" onClick={closeModal}>Fermer</button>
+                            </form>
+                        </div>
                     </div>
                 </Modal>
-
             </Dashboard>
         </div>
     );
