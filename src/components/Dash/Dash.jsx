@@ -6,24 +6,35 @@ import axios from '../../AxiosConfig';
 import { TrendingUp, TrendingDown, DollarSign } from 'lucide-react';
 
 export default function Dash() {
-    const [totalClients, setTotalClients] = useState(0); // State to hold the total number of clients
+    const [totalClients, setTotalClients] = useState(0);
     const [pendingDemandesCount, setPendingDemandesCount] = useState(0);
+    const [totalDemandes, setTotalDemandes] = useState(0);
     const [demandesByType, setDemandesByType] = useState({ labels: [], datasets: [] });
     const [demandesByMonth, setDemandesByMonth] = useState({ labels: [], datasets: [] });
-    const [totalDemandes, setTotalDemandes] = useState(0);
     const [totalDevis, setTotalDevis] = useState(0);
     const [averageMontant, setAverageMontant] = useState(0);
     const [minMontant, setMinMontant] = useState(0);
     const [maxMontant, setMaxMontant] = useState(0);
-    const [acceptedAvisPaiement, setAcceptedAvisPaiement] = useState(0);
-    const [totalAvisPaiement, setTotalAvisPaiement] = useState(0);
     const [totalPermis, setTotalPermis] = useState(0);
     const [tauxApprobation, setTauxApprobation] = useState({ approved: 0, nonApproved: 0 });
-    const [totalMontant, setTotalMontant] = useState(0); // New state for total amount
+    const [totalMontant, setTotalMontant] = useState(0);
     const [clientsWithoutDemands, setClientsWithoutDemands] = useState(0);
     const [demandesSansDevis, setDemandesSansDevis] = useState(0);
-    const [percentage, setPercentage] = useState(0);
-    const [percentageWithAvis, setPercentageWithAvis] = useState(0);
+    const [demandesParEtatDevis, setDemandesParEtatDevis] = useState({
+        labels: [],
+        datasets: [],
+    });
+
+    const [chartData, setChartData] = useState({
+        labels: [],
+        datasets: [
+            {
+                data: [],
+                backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56'],
+                hoverOffset: 4,
+            },
+        ],
+    });
 
 
     const [clientsDistributionByRegion, setClientsDistributionByRegion] = useState([]);
@@ -39,57 +50,42 @@ export default function Dash() {
 
 
 
-    // Donut chart data for payment states
-    const [paiementsByState, setPaiementsByState] = useState({
-        labels: [],
-        datasets: [{
-            data: [],
-            backgroundColor: [
-                'rgba(255, 99, 132, 0.6)',
-                'rgba(54, 162, 235, 0.6)',
-                'rgba(255, 206, 86, 0.6)',
-                'rgba(75, 192, 192, 0.6)',
-            ],
-        }],
-    });
-
-    // Données pour le graphique Doughnut
-    const doughnutData = {
-        labels: ['Avec avis de paiement', 'Sans avis de paiement'],
-        datasets: [{
-            data: [percentageWithAvis, 100 - percentageWithAvis],
-            backgroundColor: [
-                'rgba(54, 162, 235, 0.6)', // Couleur pour les demandes avec avis
-                'rgba(255, 99, 132, 0.6)', // Couleur pour les demandes sans avis
-            ],
-            hoverBackgroundColor: [
-                'rgba(54, 162, 235, 0.8)',
-                'rgba(255, 99, 132, 0.8)',
-            ],
-        }],
-    };
-
     useEffect(() => {
+        //total des clients
         const fetchTotalClients = async () => {
             try {
-                const response = await axios.get('http://localhost:5000/api/clients/stats/total'); // Utilisation d'axios pour faire la requête GET
-                console.log('Response:', response.data); // Afficher la réponse dans la console
-                setTotalClients(response.data.totalClients); // Extraire et définir le nombre total de clients depuis la réponse
+                const response = await axios.get(`http://localhost:5000/api/clients/stats/total`);
+                console.log('Response:', response.data);
+                setTotalClients(response.data.totalClients);
             } catch (error) {
-                console.error('Error fetching total clients:', error); // Gérer l'erreur si la requête échoue
+                console.error('Error fecthing total clients:', error);
             }
         };
 
+        // Demande en attente
         const fetchPendingDemandesCount = async () => {
             try {
-                const response = await axios.get('http://localhost:5000/api/demandes/pending/count'); // Utilisation d'axios pour faire la requête GET
-                console.log('Response:', response.data); // Afficher la réponse dans la console
-                setPendingDemandesCount(response.data.pendingDemandesCount); // Extraire et définir le nombre de demandes en attente depuis la réponse
+                const response = await axios.get('http://localhost:5000/api/demandes/pending/count');
+                console.log('Response:', response.data);
+                setPendingDemandesCount(response.data.pendingDemandesCount);
             } catch (error) {
-                console.error('Error fetching pending demandes:', error); // Gérer l'erreur si la requête échoue
+                console.error('Error fetching pending demandes:', error);
             }
         };
 
+        // total des demande
+        const fetchTotalDemandes = async () => {
+            try {
+                const response = await axios.get('http://localhost:5000/api/demandes/stats/total'); // Utilisation d'axios pour récupérer les données
+                const data = response.data; // La réponse est directement dans response.data
+
+                setTotalDemandes(data.total); // Mise à jour de l'état avec la valeur récupérée
+            } catch (error) {
+                console.error('Erreur lors de la récupération du total des demandes:', error.response ? error.response.data : error.message); // Gestion des erreurs
+            }
+        };
+
+        // demande par type
         const fetchDemandesByType = async () => {
             try {
                 const response = await axios.get('http://localhost:5000/api/demandes/stats/type-by-month'); // Utilisation de axios pour récupérer les données
@@ -123,6 +119,7 @@ export default function Dash() {
             }
         };
 
+        // demande par mois
         const fetchDemandesByMonth = async () => {
             try {
                 const response = await axios.get('http://localhost:5000/api/demandes/stats/monthly'); // Utilisation de axios pour récupérer les données
@@ -164,17 +161,21 @@ export default function Dash() {
                 console.error('Erreur lors de la récupération des demandes par mois:', error); // Gestion de l'erreur si la requête échoue
             }
         };
-        const fetchTotalDemandes = async () => {
-            try {
-                const response = await axios.get('http://localhost:5000/api/demandes/stats/total'); // Utilisation d'axios pour récupérer les données
-                const data = response.data; // La réponse est directement dans response.data
 
-                setTotalDemandes(data.total); // Mise à jour de l'état avec la valeur récupérée
+        //client par quartier   
+        const fetchClientsDistributionByRegion = async () => {
+            try {
+                const response = await axios.get('http://localhost:5000/api/clients/stats/distribution');
+                const data = response.data;
+
+                // Stocker les données brutes pour un affichage sous forme de liste
+                setClientsDistributionByRegion(data);
             } catch (error) {
-                console.error('Erreur lors de la récupération du total des demandes:', error.response ? error.response.data : error.message); // Gestion des erreurs
+                console.error('Erreur lors de la récupération de la distribution des clients par région:', error);
             }
         };
 
+        // total des devis
         const fetchTotalDevis = async () => {
             try {
                 const response = await axios.get('http://localhost:5000/api/devis/total-devis', {
@@ -186,6 +187,7 @@ export default function Dash() {
             }
         };
 
+        // average montant
         const fetchAverageDevis = async () => {
             try {
                 const response = await axios.get('http://localhost:5000/api/devis/average');
@@ -195,6 +197,7 @@ export default function Dash() {
             }
         };
 
+        // montant min et max
         const fetchMinMaxDevis = async () => {
             try {
                 const response = await axios.get('http://localhost:5000/api/devis/minmax');
@@ -206,49 +209,7 @@ export default function Dash() {
             }
         };
 
-        const fetchAcceptedAvisPaiement = async () => {
-            try {
-                const response = await axios.get('http://localhost:5000/api/avis/accepted-paiement-count');
-                setAcceptedAvisPaiement(response.data.acceptedCount);
-            } catch (error) {
-                console.error('Erreur lors de la récupération des avis de paiement acceptés:', error);
-            }
-        };
-
-        const fetchPaiementsByState = async () => {
-            try {
-                const response = await axios.get('http://localhost:5000/api/avis/paiements-by-state');
-                const data = response.data;
-
-                // Prepare data for the donut chart
-                const labels = data.map(item => item.etat); // Extract labels
-                const values = data.map(item => item.count); // Extract values
-
-                setPaiementsByState({
-                    labels,
-                    datasets: [{
-                        data: values,
-                        backgroundColor: [
-                            'rgba(255, 99, 132, 0.6)',
-                            'rgba(54, 162, 235, 0.6)',
-                            'rgba(255, 206, 86, 0.6)',
-                            'rgba(75, 192, 192, 0.6)',
-                        ],
-                    }],
-                });
-            } catch (error) {
-                console.error('Erreur lors de la récupération des paiements par état:', error);
-            }
-        };
-
-        const fetchTotalAvisPaiement = async () => {
-            try {
-                const response = await axios.get('http://localhost:5000/api/avis/paiementsTotal'); // Met à jour cette URL avec ton point de terminaison API
-                setTotalAvisPaiement(response.data.total); // Définit le total des avis de paiement à partir de la réponse
-            } catch (error) {
-                console.error('Erreur lors de la récupération du total des avis de paiement:', error);
-            }
-        };
+        // total permis
 
         const fetchTotalPermis = async () => {
             try {
@@ -258,6 +219,8 @@ export default function Dash() {
                 console.error('Erreur lors de la récupération du total des permis:', error);
             }
         };
+
+        // Taux d'approbation de demandes en permis
 
         const fetchTauxApprobation = async () => {
             try {
@@ -272,7 +235,8 @@ export default function Dash() {
                 console.error('Error fetching approval rate:', error);
             }
         };
-        // Add this function to fetch the total amount
+
+        // montant total de permis
         const fetchTotalMontant = async () => {
             try {
                 const response = await axios.get('http://localhost:5000/api/permis/montant-quittances');
@@ -281,18 +245,6 @@ export default function Dash() {
                 console.error('Erreur lors de la récupération du montant total:', error);
             }
         };
-        const fetchClientsDistributionByRegion = async () => {
-            try {
-                const response = await axios.get('http://localhost:5000/api/clients/stats/distribution');
-                const data = response.data;
-
-                // Stocker les données brutes pour un affichage sous forme de liste
-                setClientsDistributionByRegion(data);
-            } catch (error) {
-                console.error('Erreur lors de la récupération de la distribution des clients par région:', error);
-            }
-        };
-
 
         // Fonction pour récupérer le nombre de clients sans demande
         const fetchClientsWithoutDemands = async () => {
@@ -304,53 +256,113 @@ export default function Dash() {
             }
         };
 
-        
-
-        const fetchPercentage = async () => {
+        // Fonction pour récupérer le nombre de demandes sans devis
+        const fetchDemandsAwaitingDevisCount = async () => {
             try {
-                const response = await axios.get("http://localhost:5000/api/demandes/stats/conversion-rate"); // Assurez-vous que l'API renvoie bien le pourcentage
-                setPercentage(response.data.percentage || 50); // Par défaut, on affiche 50%
-            } catch (error) {
-                console.error("Erreur lors de la récupération du pourcentage:", error);
-                setPercentage(50); // Valeur par défaut en cas d'erreur
+                const response = await axios.get("http://localhost:5000/api/demandes/stats/count-awaiting-devis"); // Adaptez l'URL si nécessaire
+                setDemandesSansDevis(response.data.count);
+            } catch (err) {
+                console.error("Erreur lors de la récupération des demandes en attente de devis:", err);
+
             }
         };
 
-        // Fonction pour récupérer le pourcentage des demandes avec un avis de paiement
-        const fetchPercentageWithAvis = async () => {
+        // Fonction pour récupérer les demandes par état de devis
+        const fetchDemandsByDevisState = async () => {
             try {
-                const response = await axios.get('http://localhost:5000/api/demandes/stats/percentage-with-avis');
-                setPercentageWithAvis(response.data.percentage);
+                const response = await axios.get("http://localhost:5000/api/devis/states/demands-by-devis-state");
+                console.log("Demandes par état de devis:", response.data);
+
+                // Préparer les données pour le graphique
+                const labels = response.data.map(item => item.etat); // Les états (e.g., 'validé', 'en attente')
+                const data = response.data.map(item => item.total); // Les totaux par état
+                const backgroundColors = labels.map(() =>
+                    `rgba(${Math.floor(Math.random() * 255)}, ${Math.floor(Math.random() * 255)}, ${Math.floor(Math.random() * 255)}, 0.6)`
+                );
+
+                setDemandesParEtatDevis({
+                    labels,
+                    datasets: [
+                        {
+                            label: "Demandes par état de devis",
+                            data,
+                            backgroundColor: backgroundColors,
+                            hoverBackgroundColor: backgroundColors.map(color =>
+                                color.replace('0.6', '0.8')
+                            ),
+                        },
+                    ],
+                });
             } catch (error) {
-                console.error('Erreur lors de la récupération du pourcentage des demandes avec avis de paiement:', error);
+                console.error("Erreur lors de la récupération des demandes par état de devis:", error);
+            }
+        };
+
+        // Fonction pour récupérer les données du backend
+        const fetchPermisStats = async () => {
+            try {
+                const token = localStorage.getItem('token');  // Récupérer le token JWT depuis localStorage ou autre source
+
+                const response = await fetch('http://localhost:5000/api/permis/permistaille/repartition', {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`,  // Ajouter le jeton dans l'en-tête Authorization
+                    },
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Erreur HTTP: ${response.status}`);
+                }
+
+                const data = await response.json();
+
+                // Log des données pour débogage
+                console.log('Données reçues :', data);
+
+                if (data && Array.isArray(data.data)) {
+                    const labels = data.data.map(item => item.taille_projet);
+                    const counts = data.data.map(item => item.nombre_permis);
+
+                    setChartData({
+                        labels: labels,
+                        datasets: [
+                            {
+                                data: counts,
+                                backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56'],
+                                hoverOffset: 4,
+                            },
+                        ],
+                    });
+                } else {
+                    console.error('La structure des données est incorrecte');
+                }
+            } catch (error) {
+                console.error('Erreur lors de la récupération des données de permis', error);
             }
         };
 
 
-
-        fetchTotalClients(); // Call the function to fetch total clients
-        fetchPendingDemandesCount(); // Fetch pending demandes count
-        fetchDemandesByType(); // Fetch the demandes data
-        fetchDemandesByMonth();
+        fetchTotalClients();
+        fetchPendingDemandesCount();
         fetchTotalDemandes();
-        fetchTotalDevis(); // Call the new function
+        fetchDemandesByType();
+        fetchDemandesByMonth();
+        fetchTotalDevis();
         fetchAverageDevis();
         fetchMinMaxDevis();
-        fetchAcceptedAvisPaiement();
-        fetchPaiementsByState();
-        fetchTotalAvisPaiement();
         fetchTotalPermis();
         fetchTauxApprobation();
         fetchTotalMontant();
-        fetchClientsDistributionByRegion();
         fetchClientsWithoutDemands();
-        fetchPercentage();
-        fetchPercentageWithAvis();
-    }, []); // Empty dependency array ensures this runs once when the component mounts
-
+        fetchDemandsAwaitingDevisCount();
+        fetchDemandsByDevisState();
+        fetchClientsDistributionByRegion();
+        fetchPermisStats();
+    }, []);
 
     const data = {
-        labels: ['Permis aprprové', 'Permis non apprové'],
+        labels: ['Permis approuvé', 'Permis non approuvé'],
         datasets: [{
             data: [tauxApprobation.approved, tauxApprobation.nonApproved],
             backgroundColor: [
@@ -371,9 +383,29 @@ export default function Dash() {
         },
     };
 
+    const option = {
+        maintainAspectRatio: false,
+        responsive: true,  // Assure que le graphique est responsive
+        cutout: "70%",     // Ajuste la largeur du donut
+        plugins: {
+            legend: {
+                position: "bottom",
+            },
+        },
+    };
 
-
-
+    const optionss = {
+        responsive: true,
+        plugins: {
+            legend: {
+                position: 'top',
+            },
+            tooltip: {
+                enabled: true,
+            },
+        },
+        maintainAspectRatio: false,
+    }
 
     return (
         <div className="min-h-screen bg-gray-100">
@@ -382,7 +414,7 @@ export default function Dash() {
                     {/* Bandwidth Reports Section */}
                     <div className="bg-white p-1 rounded-lg shadow-md flex-1">
                         <div className="flex justify-center items-center mb-1">
-                            <h2 className="text-lg font-semibold text-indigo-800 mb-3">Permit Reports</h2>
+                            <h2 className="text-lg font-semibold text-[#213a58] mb-3">Rapports pour le permis</h2>
                         </div>
 
 
@@ -391,18 +423,18 @@ export default function Dash() {
                                 {/* Total Demandes */}
                                 <div>
                                     <p className="text-lg font-bold text-indigo-800">{totalDemandes}</p>
-                                    <p className="text-xs text-amber-500">Total des demandes</p>
+                                    <p className="text-xs text-[#oc6478]">Total des demandes</p>
                                     <div className="w-full bg-gray-200 h-1 rounded-full">
-                                        <div className="bg-amber-500 h-1 rounded-full" style={{ width: `${totalDemandes}%` }}></div>
+                                        <div className="bg-[#108ab1] h-1 rounded-full" style={{ width: `${totalDemandes}%` }}></div>
                                     </div>
                                 </div>
 
                                 {/* Pending Demandes */}
                                 <div>
                                     <p className="text-lg font-bold text-indigo-800">{pendingDemandesCount}</p>
-                                    <p className="text-xs text-amber-500">Demandes en attente</p>
+                                    <p className="text-xs text-[#oc6478]">Demandes en attente</p>
                                     <div className="w-full bg-gray-200 h-1 rounded-full">
-                                        <div className="bg-cyan-500 h-1 rounded-full" style={{ width: `${pendingDemandesCount}%` }}></div>
+                                        <div className="bg-[#108ab1] h-1 rounded-full" style={{ width: `${pendingDemandesCount}%` }}></div>
                                     </div>
                                 </div>
                             </div>
@@ -424,15 +456,17 @@ export default function Dash() {
                     {/* Statistics Cards Section */}
                     <div className="grid grid-cols-2 gap-3 flex-1">
                         {/* Total Devis */}
-                        <div className="bg-[#ade6f7] p-3 h-55 rounded-lg text-center">
-                            <p className="text-lg font-bold text-gray-800">{totalDevis}</p>
-                            <p className="text-xs text-gray-600">Total des devis</p>
+                        <div className="bg-gradient-to-r from-[#68e0cf] to-[#209cff] p-3 h-55 rounded-lg text-center">
+                            <h3 className="text-lg font-bold text-gray-800 mb-3">Devis et permis</h3>
+                            <p className="text-2xs text-gray-600">Total des devis : <span className="font-semibold text-gray-700">{totalDevis}</span></p>
+                            <p className="text-2xs text-gray-600">Total des permis : <span className="font-semibold text-gray-700">{totalPermis}</span></p>
+                            <p className="text-2xs text-gray-600">Bénéfice : <span className="font-semibold text-gray-700">{totalMontant || 0} Ariary</span></p>
                         </div>
 
 
                         {/* Montant des devis */}
-                        <div className="bg-[#bab9c4] p-4 rounded-lg shadow-md text-center">
-                            <h3 className="text-lg font-bold text-gray-800 mb-3">Montant des devis</h3>
+                        <div className="bg-gradient-to-r from-[#2f5cff] to-[#dbf4ff] p-4 rounded-lg shadow-md text-center">
+                            <h3 className="text-lg font-bold text-[#023336] mb-3">Montant des devis</h3>
 
                             {/* Montant avec icône Dollar */}
                             <div className="flex items-center justify-center space-x-2 text-sm font-medium text-gray-700 border-b border-gray-300 pb-2 mb-2">
@@ -457,8 +491,8 @@ export default function Dash() {
 
 
                         {/* Statistics Cards Section */}
-                        <div className="bg-[#bab9c4] p-6 rounded-lg shadow-lg">
-                            <h2 className="text-lg font-semibold text-indigo-700 text-center mb-4">Répartition des Clients par Quartier</h2>
+                        <div className="bg-gradient-to-r from-[#2f5cff] to-[#dbf4ff] p-6 rounded-lg shadow-lg">
+                            <h2 className="text-lg font-semibold text-[#023336] text-center mb-4">Répartition des Clients par Quartier</h2>
 
 
                             <div className="space-y-3">
@@ -472,10 +506,11 @@ export default function Dash() {
 
                             {!showAllRegions && (
                                 <div className="text-center mt-4">
-                                    <button className="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                    <button className="px-4 py-2 bg-[#4da674] text-white text-sm font-medium rounded-lg hover:bg-[#8fc79a] focus:outline-none focus:ring-2 focus:ring-indigo-500"
                                         onClick={handleShowMoreRegions}>
-                                        Voir plus
+                                        Voir
                                     </button>
+
                                 </div>
                             )}
                         </div>
@@ -484,15 +519,16 @@ export default function Dash() {
 
                         {/* Clients sans demande et demandes sans devis */}
                         {/* Clients sans demande et demandes sans devis */}
-                        <div className="bg-[#ade6f7] p-4 rounded-lg shadow-md text-center">
-                            <p className="text-sm text-gray-700">
-                                Total Clients : <span className="font-bold text-indigo-700">{totalClients}</span>
+                        <div className="bg-gradient-to-r from-[#68e0cf] to-[#209cff] p-4 rounded-lg shadow-md text-center">
+                        <h3 className="text-lg font-bold text-gray-800 mb-3">Client et demande</h3>
+                            <p className="text-2xs text-gray-700">
+                                Total Clients : <span className="font-bold text-indigo-600">{totalClients}</span>
                             </p>
-                            <p className="text-sm text-gray-700">
-                                Clients Sans Demande : <span className="font-bold text-cyan-600">{clientsWithoutDemands}</span>
+                            <p className="text-2xs text-gray-700">
+                                Clients Sans Demande : <span className="font-bold text-indigo-600">{clientsWithoutDemands}</span>
                             </p>
-                            <p className="text-sm text-gray-700">
-                                Demandes Sans Devis : <span className="font-bold text-cyan-600">{demandesSansDevis}</span>
+                            <p className="text-2xs text-gray-700">
+                                Demandes Sans Devis : <span className="font-bold text-indigo-600">{demandesSansDevis}</span>
                             </p>
                         </div>
 
@@ -505,38 +541,35 @@ export default function Dash() {
                 <div className="mt-4 grid grid-cols-3 gap-2">
                     {/* Avis de Paiement Acceptés */}
                     <div className="bg-white p-3 rounded-md shadow-sm border border-indigo-200">
-                        <h2 className="text-sm font-bold text-indigo-800 mb-1">Avis de Paiement</h2>
-                        <p className="text-xs text-gray-600">Total : <span className="font-semibold text-amber-500">{totalAvisPaiement}</span></p>
-                        <p className="text-xs text-gray-600">Paiement effectué : <span className="font-semibold text-cyan-600">{acceptedAvisPaiement}</span></p>
-                        <div className="h-20 mt-2 flex items-center justify-center">
-                            <Doughnut data={paiementsByState} options={{ maintainAspectRatio: false }} />
-                        </div>
-                        <p className="text-xs font-semibold text-indigo-700 mt-2">Variation des paiements</p>
-                    </div>
+                        <h2 className="text-sm font-bold text-[#032f30] mb-3">Statistiques des Permis par Taille de Projet</h2>
 
-                    {/* Reports Submitted */}
-                    <div className="bg-white p-3 rounded-md shadow-sm border border-cyan-200">
-                        <h2 className="text-sm font-bold text-cyan-800 mb-1">Permis Délivrés</h2>
-                        <p className="text-xs text-gray-600">Total : <span className="font-semibold text-amber-500">{totalPermis}</span></p>
-                        <p className="text-xs text-gray-600">Montant généré : <span className="font-semibold text-amber-500">{totalMontant || 0} Ariary</span></p>
-                        <div className="h-20 mt-2 flex items-center justify-center">
-                            <Pie data={data} options={{ maintainAspectRatio: false }} />
+                        <div style={{ height: "60%" }}>
+                            <Pie data={chartData} options={optionss} />
                         </div>
-                        <p className="text-xs font-semibold text-cyan-700 mt-2">Taux d'Approbation</p>
                     </div>
 
                     {/* Statistiques des Demandes */}
-                    <div className="bg-white p-3 rounded-md shadow-sm border border-indigo-200">
-                        <h2 className="text-sm font-bold text-indigo-800 mb-1">Statistiques des Demandes</h2>
-                        <div className="h-20 mt-2 flex items-center justify-center">
-                            <Doughnut data={doughnutData} options={{ maintainAspectRatio: false }} />
+                    <div className="flex space-x-3">
+                        {/* Doughnut Chart for Demands by Devis State */}
+                        <div className="bg-white p-4 rounded-lg shadow-md flex-1">
+                            <h3 className="text-sm font-bold text-[#032f30] mb-3">Demandes par État de Devis</h3>
+                            <div style={{ height: "75%" }}>
+                                <Doughnut data={demandesParEtatDevis} options={option} />
+                            </div>
                         </div>
-                        <p className="text-xs font-semibold text-indigo-700 mt-2">Distribution des Demandes</p>
+                    </div>
+
+
+                    {/* Reports Submitted */}
+                    <div className="bg-white p-3 rounded-md shadow-sm border border-cyan-200">
+                        <h2 className="text-sm font-bold text-[#032f30] mb-3">Taux d'Approbation de demande en permis</h2>
+
+                        <div style={{ height: "75%" }}>
+                            <Pie data={data} options={{ maintainAspectRatio: false }} />
+                        </div>
+
                     </div>
                 </div>
-
-
-
             </Dashboard >
         </div >
     );

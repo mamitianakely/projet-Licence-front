@@ -28,7 +28,7 @@ const Login = () => {
     };
 
     return (
-        <div className="flex items-center justify-center min-h-screen bg-cyan-50">
+        <div className="flex items-center justify-center min-h-screen bg-gradient-to-r from-[#209CFF] to-[#68E0CF]">
             {/* Outer container div for image and form */}
             <div className="flex flex-col lg:flex-row items-center justify-between w-4/5 max-w-4xl bg-white p-8 rounded-lg shadow-lg">
                 {/* Image Section */}
@@ -36,7 +36,7 @@ const Login = () => {
                     <img src={loginImage} alt="Secure Login" className="w-96 h-auto" />
                 </div>
                 <div className="bg-white p-8 rounded-lg shadow-md w-96">
-                    <h2 className="text-2xl font-bold mb-6 text-center text-indigo-700">CONNEXION</h2>
+                    <h2 className="text-2xl font-bold mb-6 text-center text-[#13547A]">CONNEXION</h2>
                     {error && <p className="text-red-500 mb-4">{error}</p>}
                     <form onSubmit={handleSubmit}>
                         <div className="mb-4">
@@ -47,7 +47,7 @@ const Login = () => {
                             <label className="block text-indigo-700 mb-2" htmlFor="password">Mot de passe</label>
                             <input type="password" id="password" value={password} onChange={(e) => setPassword(e.target.value)} className="border border-cyan-300 p-2 w-full rounded focus:ring-2 focus:ring-cyan-900" required />
                         </div>
-                        <button type="submit" className="bg-blue-500 text-white p-2 rounded w-full hover:bg-indigo-600">SE CONNECTER</button>
+                        <button type="submit" className="bg-[#4FACFE] text-white p-2 rounded w-full hover:bg-[#80D0C7]">SE CONNECTER</button>
                     </form>
                     <div className="mt-4 text-center">
                         <span className="text-sm text-indigo-700">Avez-vous déjà un compte?</span>

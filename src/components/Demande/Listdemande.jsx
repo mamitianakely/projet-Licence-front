@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import axios from '../../AxiosConfig';
 import Modal from 'react-modal';
 import Dashboard from '../Dashboard/Dashboard';
-import { Pencil, Trash, Check, Search, Plus } from 'lucide-react';
+import { Pencil, Trash, Check, Search, Plus, RefreshCcw } from 'lucide-react';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { confirmAlert } from "react-confirm-alert";
@@ -41,7 +41,7 @@ export default function Listdemande() {
         largeur: '',
         lieu: ''
     });
-    
+
     const [selectedDemande, setSelectedDemande] = useState(null); // Stores selected demand for editing
     const openModal = (demandeData) => {
         // Récupérer les valeurs de longueur et largeur depuis les données de la demande sélectionnée
@@ -93,7 +93,7 @@ export default function Listdemande() {
     useEffect(() => {
         const fetchDemandes = async () => {
             try {
-                const response = await axios.get('http://localhost:5000/api/demandes');
+                const response = await axios.get('http://localhost:5000/api/demandes/stats/withdevis');
                 setDemande(response.data);
             } catch (err) {
                 console.log(err);
@@ -118,7 +118,7 @@ export default function Listdemande() {
 
         try {
             // Requête pour rechercher les permis entre les deux dates
-            const response = await axios.get(`http://localhost:5000/api/demandes/searchDateDemands`, {
+            const response = await axios.get(`http://localhost:5000/api/demandes/search/searchDateDemands`, {
                 params: { startDate, endDate }
             });
             setDemande(response.data);
@@ -126,6 +126,18 @@ export default function Listdemande() {
             console.log(err);
             alert("Erreur lors de la recherche des demandes.");
         }
+    };
+
+    // Rafraîchir les données en rechargeant depuis l'API
+    const handleRefresh = () => {
+        // Appelle directement le même code que dans le useEffect
+        axios
+            .get('http://localhost:5000/api/demandes/stats/withdevis')
+            .then((res) => {
+                console.log('Rafraîchissement des données:', res.data);
+                setDemande(res.data); // Remet à jour la liste
+            })
+            .catch((err) => console.error(err));
     };
 
     // supprimer une demande
@@ -382,51 +394,6 @@ export default function Listdemande() {
         }
     };
 
-    // //Ajouter avis
-    // const handleAvisSubmit = async (e) => {
-    //     e.preventDefault();
-
-    //     const avisData = {
-    //         numAvis: selectedDemande.numAvis,
-    //         numDevis: selectedDemande.numDevis,
-    //         numQuittance: selectedDemande.numQuittance,
-    //         dateAvis: selectedDemande.dateAvis, // Date d'aujourd'hui
-    //     };
-
-    //     try {
-    //         const response = await axios.post('http://localhost:5000/api/avis', avisData, {
-    //             headers: {
-    //                 'Content-Type': 'application/json',
-    //             },
-    //         });
-
-    //         setIsAvisCreated(true);
-    //         closeModal(); // Fermer le modal après la soumission de l'avis
-    //         // Afficher une notification de succès avec react-toastify
-    //         toast.success('Avis de paiement ajouté avec succès!', {
-    //             position: "top-right",
-    //             autoClose: 3000,
-    //             hideProgressBar: false,
-    //             closeOnClick: true,
-    //             pauseOnHover: true,
-    //             draggable: true,
-    //             progress: undefined,
-    //             theme: "colored"
-    //         })
-    //     } catch (error) {
-    //         console.error('Erreur:', error.response ? error.response.data : error.message);
-    //         toast.error('Erreur lors de l’ajout de Avis de paiement.', {
-    //             position: "top-right",
-    //             autoClose: 3000,
-    //             hideProgressBar: false,
-    //             closeOnClick: true,
-    //             pauseOnHover: true,
-    //             draggable: true,
-    //             progress: undefined,
-    //             theme: "colored"
-    //         });
-    //     }
-    // };
 
     return (
 
@@ -444,25 +411,29 @@ export default function Listdemande() {
                         <div className="flex space-x-2">
                             <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500" />
                             <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                            <button onClick={handleDateSearch} className="px-4 py-2 bg-[#70aaf5] text-white rounded-md hover:bg-cyan-600">
+                            <button onClick={handleDateSearch} className="px-4 py-2 bg-[#293855] text-white rounded-md hover:bg-[#3e3c6e]">
                                 <Search className="text-black-500 " size={20} />
+                            </button>
+                            <button className="ml-4 px-4 py-2 bg-cyan-500 text-white rounded-md hover:bg-cyan-600" onClick={openAddModal}>
+                                <Plus className="mr-1" />
+                            </button>
+                            <button className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600" onClick={handleRefresh}>
+                                <RefreshCcw className="mr-1" />
                             </button>
                         </div>
                     </div>
                     <div className="flex justify-end space-x-2">
-                        <button className="ml-4 px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600" onClick={openAddModal}>
-                            <Plus className="mr-1" />
-                        </button>
+
                     </div>
 
                 </div>
 
-                <h2 className="text-2xl font-bold mb-4 text-black">LISTE DES DEMANDES</h2>
+                <h2 className="text-2xl font-bold mb-4 text-[#032f30]">LISTE DES DEMANDES</h2>
 
 
                 <table className="min-w-full bg-white">
                     <thead>
-                        <tr className="bg-cyan-700 text-gray-900 uppercase text-sm leading-normal">
+                        <tr className="bg-[#209CFF] text-gray-900 uppercase text-sm leading-normal">
                             <th className="py-3 px-6 text-center">NUMERO</th>
                             <th className="py-3 px-6 text-center">CLIENT</th>
                             <th className="py-3 px-6 text-center">DATE</th>
@@ -478,28 +449,29 @@ export default function Listdemande() {
                         {Array.isArray(currentDemandes) && currentDemandes.map((data, i) => (
 
                             <tr key={i} className="border-t">
-                                <td className="py-3 px-6 text-center">{data.numDemande}</td>
+                                <td className="py-3 px-6 text-center">{data.hasDevis && <span className="text-blue-500 text-lg">●</span>}    {data.numDemande}</td>
                                 <td className="py-3 px-6 text-center">{data.nomClient}</td>
                                 <td className="py-3 px-6 text-center">{formatDate(data.dateDemande)}</td>
                                 <td className="py-3 px-6 text-center">{data.typeDemande}</td>
                                 <td className="py-3 px-6 text-center">{data.longueur}</td>
                                 <td className="py-3 px-6 text-center">{data.largeur}</td>
                                 <td className="py-3 px-6 text-center">{data.lieu}</td>
+
                                 <td className="py-3 px-6 text-center">
                                     <div className="flex space-x-2">
                                         {/* Bouton pour afficher/masquer les autres boutons */}
-                                        <button className="flex items-center bg-indigo-500 text-white px-2 py-1 rounded hover:bg-indigo-600" onClick={toggleButtons}>...</button>
+                                        <button className="flex items-center bg-[#293855] text-white px-2 py-1 rounded hover:bg-gray-600" onClick={toggleButtons}>...</button>
 
                                         {/* Affichage conditionnel des boutons */}
                                         {showButtons && (
                                             <div className="flex space-x-2">
-                                                <button className="flex items-center bg-indigo-500 text-white px-2 py-1 rounded hover:bg-indigo-600" onClick={() => openEditModal(data)}>
+                                                <button className="flex items-center bg-[#246bfd] text-white px-2 py-1 rounded hover:bg-[#30a0e0]" onClick={() => openEditModal(data)}>
                                                     <Pencil className="mr-1" /> {/* Icône pour Modifier */}
                                                 </button>
-                                                <button className="flex items-center bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600" onClick={() => handleDelete(data.numDemande)}>
+                                                <button className="flex items-center bg-[#E95354] text-white px-2 py-1 rounded hover:bg-red-600" onClick={() => handleDelete(data.numDemande)}>
                                                     <Trash className="mr-1" /> {/* Icône pour Supprimer */}
                                                 </button>
-                                                <button className="flex items-center bg-cyan-500 hover:bg-cyan-600 px-2 py-1 rounded" onClick={() => openModal(data)}>
+                                                <button className="flex items-center bg-[#0a7075] hover:bg-cyan-600 px-2 py-1 rounded" onClick={() => openModal(data)}>
                                                     <Check className="mr-1" />
                                                 </button>
                                             </div>
@@ -528,56 +500,58 @@ export default function Listdemande() {
                     <div className="max-w-2xl w-full p-6 bg-white rounded-lg shadow-lg">
                         <h2 className="text-2xl font-bold mb-4">NOUVELLE DEMANDE</h2>
                         <form onSubmit={handleAddSubmit}>
-                            <div className="mb-4">
-                                <label>Numero de la demande :</label>
-                                <input type="text" className="w-full p-2 border border-gray-300 rounded" value={formState.numDemande} onChange={(e) =>
-                                    setFormState({ ...formState, numDemande: e.target.value })} required />
-                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                                {/* Groupe 1 */}
+                                <div className="mb-4">
+                                    <label>Numero de la demande :</label>
+                                    <input type="text" className="w-full p-2 border border-gray-300 rounded" value={formState.numDemande}
+                                        onChange={(e) => setFormState({ ...formState, numDemande: e.target.value })} required />
+                                </div>
+                                <div className="mb-4">
+                                    <label>Numero du Client :</label>
+                                    <input type="text" className="w-full p-2 border border-gray-300 rounded" value={formState.numChrono}
+                                        onChange={(e) => setFormState({ ...formState, numChrono: e.target.value })} required />
+                                </div>
 
-                            <div className="mb-4">
-                                <label>Numero du Client :</label>
-                                <input type="text" className="w-full p-2 border border-gray-300 rounded" value={formState.numChrono} onChange={(e) =>
-                                    setFormState({ ...formState, numChrono: e.target.value })} required />
-                            </div>
+                                {/* Groupe 2 */}
+                                <div className="mb-4">
+                                    <label>Date de la demande :</label>
+                                    <input type="date" className="w-full p-2 border border-gray-300 rounded" value={formState.dateDemande}
+                                        onChange={(e) => setFormState({ ...formState, dateDemande: e.target.value })} required />
+                                </div>
+                                <div className="mb-4">
+                                    <label>Nature de la demande :</label>
+                                    <select className="w-full p-2 border border-gray-300 rounded" value={formState.typeDemande}
+                                        onChange={(e) => setFormState({ ...formState, typeDemande: e.target.value })} required>
+                                        <option value="">-- Sélectionner une nature de demande --</option>
+                                        <option value="Etablissements hôteliers">Etablissements hôteliers</option>
+                                        <option value="Etablissements culturels">Etablissements culturels</option>
+                                        <option value="Etablissements nécessitant une étude d’impact environnemental">Etablissements nécessitant une étude d’impact environnemental</option>
+                                        <option value="Etablissements industriels">Etablissements industriels</option>
+                                        <option value="Etablissements recevant du public">Etablissements recevant du public</option>
+                                        <option value="Autres">Autres</option>
+                                    </select>
+                                </div>
 
-                            <div className="mb-4">
-                                <label>Date de la demande :</label>
-                                <input type="date" className="w-full p-2 border border-gray-300 rounded" value={formState.dateDemande} onChange={(e) =>
-                                    setFormState({ ...formState, dateDemande: e.target.value })} required />
-                            </div>
+                                {/* Groupe 3 */}
+                                <div className="mb-4">
+                                    <label>Longueur du terrain :</label>
+                                    <input type="number" step="0.01" className="w-full p-2 border border-gray-300 rounded" value={formState.longueur}
+                                        onChange={(e) => setFormState({ ...formState, longueur: e.target.value })} required />
+                                </div>
+                                <div className="mb-4">
+                                    <label>Largeur du terrain :</label>
+                                    <input type="number" step="0.01" className="w-full p-2 border border-gray-300 rounded" value={formState.largeur}
+                                        onChange={(e) => setFormState({ ...formState, largeur: e.target.value })} required />
+                                </div>
 
-                            <div className="mb-4">
-                                <label>Nature de la demande :</label>
-                                <select className="w-full p-2 border border-gray-300 rounded" value={formState.typeDemande} onChange={(e) =>
-                                    setFormState({ ...formState, typeDemande: e.target.value })} required>
-                                    <option value="">-- Sélectionner une nature de demande --</option>
-                                    <option value="Etablissements hôteliers">Etablissements hôteliers</option>
-                                    <option value="Etablissements culturels">Etablissements culturels</option>
-                                    <option value="Etablissements nécessitant une étude d’impact environnemental">Etablissements nécessitant une étude d’impact environnemental</option>
-                                    <option value="Etablissements industriels">Etablissements industriels</option>
-                                    <option value="Etablissements recevant du public">Etablissements recevant du public</option>
-                                    <option value="Autres">Autres</option>
-                                </select>
+                                {/* Groupe 4 */}
+                                <div className="col-span-2 mb-4">
+                                    <label>Lieu de construction :</label>
+                                    <input type="text" className="w-full p-2 border border-gray-300 rounded" value={formState.lieu}
+                                        onChange={(e) => setFormState({ ...formState, lieu: e.target.value })} required />
+                                </div>
                             </div>
-
-                            <div className="mb-4">
-                                <label>Longueur du terrain :</label>
-                                <input type="number" step="0.01" className="w-full p-2 border border-gray-300 rounded" value={formState.longueur} onChange={(e) =>
-                                    setFormState({ ...formState, longueur: e.target.value })} required />
-                            </div>
-
-                            <div className="mb-4">
-                                <label>Largeur du terrain :</label>
-                                <input type="number" step="0.01" className="w-full p-2 border border-gray-300 rounded" value={formState.largeur} onChange={(e) =>
-                                    setFormState({ ...formState, largeur: e.target.value })} required />
-                            </div>
-
-                            <div className="mb-4">
-                                <label>Lieu de construction :</label>
-                                <input type="text" className="w-full p-2 border border-gray-300 rounded" value={formState.lieu} onChange={(e) =>
-                                    setFormState({ ...formState, lieu: e.target.value })} required />
-                            </div>
-
                             <button type="submit" className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">ENREGISTRER</button>
                             <button type="button" className="ml-2 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600" onClick={closeModal}>Annuler</button>
                         </form>
@@ -589,11 +563,6 @@ export default function Listdemande() {
                     <div className="max-w-2xl w-full p-6 bg-white rounded-lg shadow-lg">
                         <h2 className="text-2xl font-bold mb-4">MODIFIER UNE DEMANDE</h2>
                         <form onSubmit={handleEditSubmit}>
-                            <div className="mb-4">
-                                <label>Date de la demande :</label>
-                                <input type="text" className="w-full p-2 border border-gray-300 rounded" value={formatDate(formState.dateDemande)} onChange={(e) =>
-                                    setFormState({ ...formState, dateDemande: e.target.value })} required />
-                            </div>
 
                             <div className="mb-4">
                                 <label>Nature de la demande :</label>

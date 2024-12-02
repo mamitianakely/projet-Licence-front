@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import axios from '../../AxiosConfig';
 import Dashboard from "../Dashboard/Dashboard";
-import { Trash, FileText, Circle, CheckCircle } from 'lucide-react';
+import { Trash, FileText, Circle, CheckCircle, Filter, RefreshCcw } from 'lucide-react';
 import { confirmAlert } from "react-confirm-alert";
 import "react-confirm-alert/src/react-confirm-alert.css";
 import { ToastContainer, toast } from 'react-toastify';
@@ -14,7 +14,7 @@ export default function Listdevis() {
     const [searchTerm, setSearchTerm] = useState('');
     const [modalIsOpen, setModalIsOpen] = useState(false);
     const [currentPage, setCurrentPage] = useState(1);
-    const itemsPerPage = 5;
+    const itemsPerPage = 4;
 
     const [showButtons, setShowButtons] = useState(false);
     const toggleButtons = () => {
@@ -28,19 +28,19 @@ export default function Listdevis() {
         setIsOpen(!isOpen);
     };
 
-    
 
 
+    // récupérer la liste des devis
     useEffect(() => {
-        const fetchDevis = async () => {
-            try {
-                const response = await axios.get(`http://localhost:5000/api/devis`);
-                setDevis(response.data)
-            } catch (err) {
-                console.log(err);
-            }
-        };
-        fetchDevis();
+        axios.get(`http://localhost:5000/api/devis/tri/withPermisAndClient`)
+            .then(res => {
+                console.log('Données reçues:', res.data);
+                res.data.forEach(devis => {
+                    console.log('Devis:', devis.numDevis, 'hasPermis:', devis.hasPermis);
+                });
+                setDevis(res.data)
+            })
+            .catch(err => console.log(err));
     }, []);
 
     const handleSearch = (event) => {
@@ -126,10 +126,10 @@ export default function Listdevis() {
             console.error("Erreur lors de la mise à jour de l'état :", err);
         }
     };
-    
-    
 
-    
+
+
+
     const [selectedDevis, setSelectedDevis] = useState(null); // Stocker le devis sélectionné
     const [numDevis, setNumDevis] = useState('');  // Champ numDevis à pré-remplir
     const [datePermis, setDatePermis] = useState('');
@@ -154,12 +154,12 @@ export default function Listdevis() {
             console.error("Numéro de devis manquant");
             return; // Afficher un message d'erreur si numDevis est manquant
         }
-    
+
         try {
             await axios.post(`http://localhost:5000/api/devis/permis`, {
                 numDevis: selectedDevis.numDevis,
                 numQuittance: numQuittance,
-                datePermis :datePermis
+                datePermis: datePermis
             });
             toast.success("Permis enregistré avec succès!");
             closeModal();
@@ -168,36 +168,9 @@ export default function Listdevis() {
         }
     };
 
-    // const handleEtatChange = async (numDevis) => {
-    //     try {
-    //         // Appel à l'API pour mettre à jour l'état de l'avis à "payé"
-    //         await axios.put(`http://localhost:5000/api/devis/${numDevis}/payer`);
 
-    //         // Mise à jour locale des avis pour refléter le changement
-    //         setDevis(prevDevis =>
-    //             prevDevis.map(item =>
-    //                 item.numDevis === numDevis ? { ...item, etat: 'payé' } : item
-    //             )
-    //         );
-
-    //         // Affiche une notification de succès
-    //         toast.success('Paiement avec succès!', {
-    //             position: "top-right",
-    //             autoClose: 3000,
-    //             hideProgressBar: false,
-    //             closeOnClick: true,
-    //             pauseOnHover: true,
-    //             draggable: true,
-    //             progress: undefined,
-    //             theme: "colored"
-    //         })
-    //     } catch (err) {
-    //         console.error("Erreur lors de la mise à jour de l'état :", err);
-    //     }
-    // };
-
-    const handleDownloadPdf = async (numDevis) => {
-        // Afficher la boîte de confirmation avant de télécharger la facture
+    // télécharger le facture
+    const downloadDevisPDF = async (numDevis) => {
         confirmAlert({
             title: "Confirmation",
             message: "Voulez-vous vraiment générer cette facture ?",
@@ -206,24 +179,21 @@ export default function Listdevis() {
                     label: "Oui",
                     onClick: async () => {
                         try {
-                            const response = await axios.get(`http://localhost:5000/api/devis/downpdf/${numDevis}`, {
-                                responseType: 'blob', // Important pour les fichiers PDF
+                            const response = await axios.get(`http://localhost:5000/api/devis/get-pdf/${numDevis}`, {
+                                responseType: 'blob', // Nécessaire pour télécharger les fichiers
                             });
 
-                            if (response.status === 200) {
-                                const url = window.URL.createObjectURL(new Blob([response.data]));
-                                const link = document.createElement('a');
-                                link.href = url;
-                                link.setAttribute('download', `devis-${numDevis}.pdf`);
-                                document.body.appendChild(link);
-                                link.click();
-                                document.body.removeChild(link);
-                            } else {
-                                console.error('Erreur lors du téléchargement du PDF:', response);
-                            }
-                        } catch (err) {
-                            console.error('Erreur lors du téléchargement du PDF:', err);
-                            alert('Impossible de télécharger le PDF. Veuillez réessayer plus tard.');
+                            // Crée un lien pour télécharger le fichier
+                            const url = window.URL.createObjectURL(new Blob([response.data]));
+                            const link = document.createElement('a');
+                            link.href = url;
+                            link.setAttribute('download', `devis_${numDevis}.pdf`); // Nom du fichier
+                            document.body.appendChild(link);
+                            link.click();
+                            link.remove();
+                        } catch (error) {
+                            console.error('Erreur lors du téléchargement du devis :', error);
+                            alert('Impossible de télécharger le devis. Veuillez réessayer.');
                         }
                     },
                 },
@@ -237,7 +207,31 @@ export default function Listdevis() {
         });
     };
 
+    // Filtrage par nom du client
+    const handleSortByClientName = async () => {
+        try {
+            const response = await axios.get('http://localhost:5000/api/devis/tri/sorted-by-client');
+            setDevis(response.data);
+        } catch (err) {
+            console.error('Error fetching sorted devis:', err);
+        }
+    };
 
+    // Rafraîchir les données en rechargeant depuis l'API
+    const handleRefresh = () => {
+        // Appelle directement le même code que dans le useEffect
+        axios
+            .get('http://localhost:5000/api/devis/tri/withPermisAndClient')
+            .then((res) => {
+                console.log('Rafraîchissement des données:', res.data);
+                setDevis(res.data); // Remet à jour la liste
+            })
+            .catch((err) => console.error(err));
+    };
+
+
+
+    // filtrer les recherches
     const filteredDevis = devis.filter((data) => {
         return (
             (data.nomClient.toLowerCase().includes(searchTerm)) ||  // Comparer les nombres comme des chaînes
@@ -270,15 +264,25 @@ export default function Listdevis() {
                             <input type="text" placeholder="Rechercher" value={searchTerm} onChange={handleSearch}
                                 className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" />
                         </form>
+                        <div className="flex space-x-1">
+                            <button className="px-4 py-2 bg-cyan-500 text-white rounded-md hover:bg-cyan-600" onClick={handleSortByClientName}>
+                                <Filter className="mr-1" />
+                            </button>
+                            <button className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600" onClick={handleRefresh}>
+                                <RefreshCcw className="mr-1" />
+                            </button>
+                        </div>
+
+
                         {/* <button className="ml-4 px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600" onClick={openAddModal}>AJOUTER</button> */}
                     </div>
                 </div>
 
-                <h2 className="text-2xl font-bold mb-4 text-black">LISTE DES DEVIS</h2>
+                <h2 className="text-2xl font-bold mb-4 text-[#032f30]">LISTE DES DEVIS</h2>
 
                 <table className="min-w-full bg-white">
                     <thead>
-                        <tr className="bg-cyan-700 text-gray-900 uppercase text-sm leading-normal">
+                        <tr className="bg-[#209CFF] text-gray-900 uppercase text-sm leading-normal">
                             <th className="py-3 px-6 text-center">N° DE DEVIS</th>
                             <th className="py-3 px-6 text-center">NOM DU CLIENT</th>
                             <th className="py-3 px-6 text-center">PRIX POUR LA LONGUEUR</th>
@@ -291,7 +295,7 @@ export default function Listdevis() {
                     <tbody>
                         {Array.isArray(currentDevis) && currentDevis.map((data, i) => (
                             <tr key={i} className="border-t">
-                                <td className="py-3 px-6 text-center">{data.numDevis}</td>
+                                <td className="py-3 px-6 text-center">{data.hasPermis && <span className="text-blue-500 text-lg">●</span>} {data.numDevis}</td>
                                 <td className="py-3 px-6 text-center">{data.nomClient}</td>
                                 <td className="py-3 px-6 text-center">{data.prixLongueur}</td>
                                 <td className="py-3 px-6 text-center">{data.prixLargeur}</td>
@@ -300,10 +304,14 @@ export default function Listdevis() {
                                 <td className="py-3 px-6 text-center">
                                     <div className="flex space-x-2">
                                         {/* Bouton pour afficher/masquer les autres boutons */}
-                                        <button className="flex items-center bg-indigo-500 text-white px-2 py-1 rounded hover:bg-indigo-600" onClick={toggleButtons}>...</button>
+                                        <button className="flex items-center bg-[#293855] text-white px-2 py-1 rounded hover:bg-gray-600" onClick={toggleButtons}>...</button>
                                         {showButtons && (
                                             <div className="flex space-x-2">
-                                                <button className="flex items-center bg-green-500 text-white px-2 py-1 rounded hover:bg-green-600" onClick={() => handleDownloadPdf(data.numDevis)}>
+                                                {/* <button className="flex items-center bg-green-500 text-white px-2 py-1 rounded hover:bg-green-600" onClick={() => handleDownloadPdf(data.numDevis)}>
+                                                    <FileText className="mr-1" />
+                                                </button> */}
+                                                <button className="flex items-center bg-[#4165D5] text-white px-2 py-1 rounded hover:bg-[#246af3]"
+                                                    onClick={() => downloadDevisPDF(data.numDevis)}>
                                                     <FileText className="mr-1" />
                                                 </button>
                                                 {data.etat === 'non payé' ? (
@@ -337,8 +345,7 @@ export default function Listdevis() {
                                                         )}
                                                     </div>
                                                 )}
-
-                                                <button className="flex items-center bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600" onClick={() => handleDelete(data.numDevis)}>
+                                                <button className="flex items-center bg-[#E95354] text-white px-2 py-1 rounded hover:bg-red-600" onClick={() => handleDelete(data.numDevis)}>
                                                     <Trash className="mr-1" />
                                                 </button>
                                             </div>
@@ -369,7 +376,7 @@ export default function Listdevis() {
                                     {/* Numéro de devis */}
                                     <div className="mb-4">
                                         <label className="block">Numéro de devis</label>
-                                        <input type="text" value={numDevis} className="mt-1 p-2 border border-gray-300 rounded w-full" readOnly/>
+                                        <input type="text" value={numDevis} className="mt-1 p-2 border border-gray-300 rounded w-full" readOnly />
                                     </div>
                                     {/* Numéro de quittance */}
                                     <div className="mb-4">

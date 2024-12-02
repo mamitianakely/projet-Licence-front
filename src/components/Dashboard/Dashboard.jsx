@@ -2,6 +2,9 @@ import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Menu, User, LogOut, Home, Users, FileText, FileSignature, CreditCard, Building, CheckCircle } from 'lucide-react';
 import logopermit from '../../assets/logopermit.png'
+import { confirmAlert } from 'react-confirm-alert';
+import 'react-confirm-alert/src/react-confirm-alert.css';
+
 
 const Dashboard = ({ children }) => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -15,15 +18,29 @@ const Dashboard = ({ children }) => {
   // Fonction pour basculer l'état du menu déroulant
   const handleDropdownToggle = () => {
     setIsDropdownOpen(!isDropdownOpen);
+    console.log('Dropdown state:', !isDropdownOpen);
   };
 
-  // Fonction de déconnexion
   const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('username');
-    navigate('/'); // Redirige vers la page de connexion après la déconnexion
+    confirmAlert({
+      title: 'Confirmation',
+      message: 'Voulez-vous vraiment vous déconnecter ?',
+      buttons: [
+        {
+          label: 'Oui',
+          onClick: () => {
+            localStorage.removeItem('token');
+            localStorage.removeItem('username');
+            navigate('/'); // Redirige vers la page de connexion
+          },
+        },
+        {
+          label: 'Non',
+          onClick: () => setIsDropdownOpen(false), // Ferme le dropdown si annulation
+        },
+      ],
+    });
   };
-
   const navItems = [
     { path: '/dash', icon: Home, label: 'Tableau de bord' },
     { path: '/listdemande', icon: FileText, label: 'Demande' },
@@ -37,14 +54,14 @@ const Dashboard = ({ children }) => {
   return (
     <div className="flex h-screen bg-indigo-50">
       {/* Sidebar */}
-      <aside className={`bg-[#337cc1] text-white transition-all duration-300 ease-in-out ${sidebarOpen ? 'w-64' : 'w-20'} h-full space-y-6 py-7 px-2 absolute inset-y-0 left-0`}>
+      <aside className={`bg-gradient-to-r from-[#209CFF] to-[#68E0CF] text-white transition-all duration-300 ease-in-out ${sidebarOpen ? 'w-64' : 'w-20'} h-full space-y-6 py-7 px-2 absolute inset-y-0 left-0`}>
         <div className="flex items-center justify-between mb-6">
           <div className={`text-3xl font-semibold text-black text-center mb-8 flex items-center ${sidebarOpen ? '' : 'hidden'}`}>
             <img src={logopermit} alt="" className="w-8 h-8 mr-2 " />PermisTrack</div>
         </div>
         <nav>
           {navItems.map((item) => (
-            <Link key={item.path} to={item.path} className={`flex items-center text-gray-950 py-2.5 px-4 rounded transition duration-200 hover:bg-[#c6cedc] ${location.pathname === item.path ? 'bg-[#c6cedc]' : ''}`}
+            <Link key={item.path} to={item.path} className={`flex items-center text-gray-950 py-3 px-4 text-3xs rounded transition duration-200 hover:bg-[#50ADBF] no-underline ${location.pathname === item.path ? 'bg-[#c6cedc]' : ''}`}
             >
               <item.icon className={`inline-block ${sidebarOpen ? '' : 'mx-auto'}`} size={25} />
               <span className={`ml-2 ${sidebarOpen ? '' : 'hidden'}`}>{item.label}</span>
@@ -56,7 +73,7 @@ const Dashboard = ({ children }) => {
       {/* Main Content */}
       <div className={`flex-1 flex flex-col overflow-hidden transition-all duration-300 ease-in-out ${sidebarOpen ? 'ml-64' : 'ml-20'}`}>
         {/* Navbar */}
-        <header className="bg-[#a5baf3] shadow-md">
+        <header className="bg-gradient-to-r from-[#68E0CF] to-[#209CFF] shadow-md">
           <div className="flex items-center justify-between p-4">
             <div className="flex items-center">
               <button onClick={toggleSidebar} className="text-gray-500 focus:outline-none focus:text-gray-700 hidden md:flex">
@@ -68,11 +85,11 @@ const Dashboard = ({ children }) => {
               <div className="relative">
                 <button className="flex items-center text-gray-700 focus:outline-none" onClick={handleDropdownToggle}>
                   <User className="h-6 w-6 text-gray-700" />
-                  <span className="ml-2 bg-[#c6cedc] py-2.5 px-4 rounded transition duration-200 hover:bg-[#5b85f8]">{username ? username : 'Utilisateur'}</span>
+                  <span className="ml-2 bg-[#D8EFF7] py-2.5 px-4 rounded transition duration-200 hover:bg-[#61CBFF]">{username ? username : 'Utilisateur'}</span>
                 </button>
                 {isDropdownOpen && (
-                  <div className="absolute right-0 mt-2 w-48 bg-white border rounded shadow-lg">
-                    <button className="block px-4 py-2 text-gray-700 hover:bg-gray-100" onClick={handleLogout}>Déconnexion</button>
+                  <div className="absolute right-0 mt-2 w-48 bg-white border rounded shadow-lg z-50">
+                    <button className="block px-4 py-2 text-gray-700 hover:bg-gray-200" onClick={handleLogout}>Déconnexion</button>
                     {/* Ajoutez d'autres options de menu ici si nécessaire */}
                   </div>
                 )}

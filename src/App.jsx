@@ -24,6 +24,8 @@ import Login from './components/Login/Login';
 import Register from './components/Login/Register';
 import ProtectedRoute from './components/Login/ProtectedRoute';
 
+
+
 function App() {
   return (
     <div className="App">
@@ -33,9 +35,9 @@ function App() {
 
 
           <Route path="/" element={<Login />} />
+          <Route path='/register' element={<Register />}></Route>
           <Route element={<ProtectedRoute />}>
             <Route path="/dash" element={<Dash />} />
-            <Route path='/register' element={<Register />}></Route>
             <Route path='/client' element={<Client />}></Route>
             <Route path='/listclient' element={<Listclient />}></Route>
             <Route path='/updateclient/:numChrono' element={<UpdateClient />}></Route>
