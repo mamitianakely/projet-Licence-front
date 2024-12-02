@@ -457,7 +457,7 @@ export default function Dash() {
                     <div className="grid grid-cols-2 gap-3 flex-1">
                         {/* Total Devis */}
                         <div className="bg-gradient-to-r from-[#68e0cf] to-[#209cff] p-3 h-55 rounded-lg text-center">
-                            <h3 className="text-lg font-bold text-gray-800 mb-3">Devis et permis</h3>
+                            <h3 className="text-lg font-bold text-gray-800 mb-3 mt-2">Devis et permis</h3>
                             <p className="text-2xs text-gray-600">Total des devis : <span className="font-semibold text-gray-700">{totalDevis}</span></p>
                             <p className="text-2xs text-gray-600">Total des permis : <span className="font-semibold text-gray-700">{totalPermis}</span></p>
                             <p className="text-2xs text-gray-600">Bénéfice : <span className="font-semibold text-gray-700">{totalMontant || 0} Ariary</span></p>
@@ -466,7 +466,7 @@ export default function Dash() {
 
                         {/* Montant des devis */}
                         <div className="bg-gradient-to-r from-[#2f5cff] to-[#dbf4ff] p-4 rounded-lg shadow-md text-center">
-                            <h3 className="text-lg font-bold text-[#023336] mb-3">Montant des devis</h3>
+                            <h3 className="text-lg font-bold text-[#023336] mb-3 mt-2">Montant des devis</h3>
 
                             {/* Montant avec icône Dollar */}
                             <div className="flex items-center justify-center space-x-2 text-sm font-medium text-gray-700 border-b border-gray-300 pb-2 mb-2">
@@ -492,21 +492,34 @@ export default function Dash() {
 
                         {/* Statistics Cards Section */}
                         <div className="bg-gradient-to-r from-[#2f5cff] to-[#dbf4ff] p-6 rounded-lg shadow-lg">
-                            <h2 className="text-lg font-semibold text-[#023336] text-center mb-4">Répartition des Clients par Quartier</h2>
+                            <h2 className="text-lg font-semibold text-[#023336] text-center mb-4 mt-6">Répartition des Clients par Quartier</h2>
 
 
                             <div className="space-y-3">
-                                {visibleRegions.map((item, index) => (
-                                    <div key={index} className="flex justify-between items-center p-3 bg-white rounded-lg shadow-sm hover:bg-indigo-50 transition-colors">
-                                        <span className="text-sm font-medium text-gray-700">{item.region}</span>
-                                        <span className="text-sm font-semibold text-indigo-600">{item.clientCount}</span>
+                                {showAllRegions && (
+                                    <div>
+                                        {visibleRegions.map((item, index) => (
+                                            <div key={index} className="flex justify-between items-center p-3 bg-white rounded-lg shadow-sm hover:bg-indigo-50 transition-colors">
+                                                <span className="text-sm font-medium text-gray-700">{item.region}</span>
+                                                <span className="text-sm font-semibold text-indigo-600">{item.clientCount}</span>
+                                            </div>
+                                        ))}
+                                        {/* Bouton pour fermer la liste */}
+                                        <div className="text-right mt-2">
+                                            <button
+                                                className="px-3 py-1 bg-gray-200 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                                onClick={() => setShowAllRegions(false)}
+                                            >
+                                                &#x2715; {/* Icône de croix */}
+                                            </button>
+                                        </div>
                                     </div>
-                                ))}
+                                )}
                             </div>
 
                             {!showAllRegions && (
                                 <div className="text-center mt-4">
-                                    <button className="px-4 py-2 bg-[#4da674] text-white text-sm font-medium rounded-lg hover:bg-[#8fc79a] focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                    <button className="px-10 py-2 bg-blue-500 text-black text-sm font-medium rounded-lg hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                                         onClick={handleShowMoreRegions}>
                                         Voir
                                     </button>
@@ -520,7 +533,7 @@ export default function Dash() {
                         {/* Clients sans demande et demandes sans devis */}
                         {/* Clients sans demande et demandes sans devis */}
                         <div className="bg-gradient-to-r from-[#68e0cf] to-[#209cff] p-4 rounded-lg shadow-md text-center">
-                        <h3 className="text-lg font-bold text-gray-800 mb-3">Client et demande</h3>
+                            <h3 className="text-lg font-bold text-gray-800 mb-3 mt-2">Client et demande</h3>
                             <p className="text-2xs text-gray-700">
                                 Total Clients : <span className="font-bold text-indigo-600">{totalClients}</span>
                             </p>

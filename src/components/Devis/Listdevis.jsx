@@ -16,9 +16,10 @@ export default function Listdevis() {
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 4;
 
-    const [showButtons, setShowButtons] = useState(false);
-    const toggleButtons = () => {
-        setShowButtons(!showButtons); // Basculer l'affichage des boutons
+    const [activeRowIndex, setActiveRowIndex] = useState(null);
+
+    const toggleButtons = (index) => {
+        setActiveRowIndex((prevIndex) => (prevIndex === index ? null : index));
     };
 
     const [isOpen, setIsOpen] = useState(false);
@@ -304,8 +305,9 @@ export default function Listdevis() {
                                 <td className="py-3 px-6 text-center">
                                     <div className="flex space-x-2">
                                         {/* Bouton pour afficher/masquer les autres boutons */}
-                                        <button className="flex items-center bg-[#293855] text-white px-2 py-1 rounded hover:bg-gray-600" onClick={toggleButtons}>...</button>
-                                        {showButtons && (
+                                        <button className="flex items-center bg-[#293855] text-white px-2 py-1 rounded hover:bg-gray-600" 
+                                           onClick={() => toggleButtons(i)}>...</button>
+                                        {activeRowIndex === i && (
                                             <div className="flex space-x-2">
                                                 {/* <button className="flex items-center bg-green-500 text-white px-2 py-1 rounded hover:bg-green-600" onClick={() => handleDownloadPdf(data.numDevis)}>
                                                     <FileText className="mr-1" />

@@ -15,11 +15,11 @@ export default function Listpermis() {
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 4;
 
-    const [showButtons, setShowButtons] = useState(false);
-    const toggleButtons = () => {
-        setShowButtons(!showButtons); // Basculer l'affichage des boutons
-    };
+    const [activeRowIndex, setActiveRowIndex] = useState(null);
 
+    const toggleButtons = (index) => {
+        setActiveRowIndex((prevIndex) => (prevIndex === index ? null : index));
+    };
 
     useEffect(() => {
         const fetchPermis = async () => {
@@ -237,10 +237,11 @@ export default function Listpermis() {
                                 <td className="py-3 px-6 text-center">
                                     <div className="flex space-x-2">
                                         {/* Bouton pour afficher/masquer les autres boutons */}
-                                        <button className="flex items-center bg-[#293855] text-white px-2 py-1 rounded hover:bg-gray-600" onClick={toggleButtons}>...</button>
+                                        <button className="flex items-center bg-[#293855] text-white px-2 py-1 rounded hover:bg-gray-600" 
+                                            onClick={() => toggleButtons(i)}>...</button>
 
                                         {/* Affichage conditionnel des boutons */}
-                                        {showButtons && (
+                                        {activeRowIndex === i && (
                                             <div className="flex space-x-2">
                                                 <button className="flex items-center bg-[#4165D5] text-white px-2 py-1 rounded hover:bg-[#246af3]" onClick={() => handleDownloadPdf(data.numPermis)}>
                                                     <FileText className="mr-1" />

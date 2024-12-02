@@ -21,9 +21,10 @@ export default function Listclient() {
         contact: ''
     });
 
-    const [showButtons, setShowButtons] = useState(false);
-    const toggleButtons = () => {
-        setShowButtons(!showButtons); // Basculer l'affichage des boutons
+    const [activeRowIndex, setActiveRowIndex] = useState(null);
+
+    const toggleButtons = (index) => {
+        setActiveRowIndex((prevIndex) => (prevIndex === index ? null : index));
     };
 
     const [currentPage, setCurrentPage] = useState(1);
@@ -194,14 +195,14 @@ export default function Listclient() {
     }, []);
 
     // Rafraîchir les données en rechargeant depuis l'API
-     const handleRefresh = () => {
+    const handleRefresh = () => {
         // Appelle directement le même code que dans le useEffect
         axios.get('http://localhost:5000/api/clients/stats/withdemandes')
-        .then((res) => {
-            console.log('Rafraîchissement des données:', res.data);
-            setClient(res.data); // Remet à jour la liste
-        })
-        .catch((err) => console.error(err));
+            .then((res) => {
+                console.log('Rafraîchissement des données:', res.data);
+                setClient(res.data); // Remet à jour la liste
+            })
+            .catch((err) => console.error(err));
     };
 
 
@@ -237,12 +238,15 @@ export default function Listclient() {
                             />
                         </form>
 
-                        <button className="ml-4 px-4 py-2 bg-cyan-500 text-white rounded-md hover:bg-cyan-600" onClick={openAddModal}>
-                            <Plus className="mr-1" />
-                        </button>
-                        <button className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600" onClick={handleRefresh}>
+                        <div className="flex items-center space-x-2">
+                            <button className="px-4 py-2 bg-cyan-500 text-white rounded-md hover:bg-cyan-600" onClick={openAddModal}>
+                                <Plus className="mr-1" />
+                            </button>
+                            <button className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600" onClick={handleRefresh}>
                                 <RefreshCcw className="mr-1" />
                             </button>
+                        </div>
+
                     </div>
 
                     <h2 className="text-2xl font-bold mb-4 text-[#032f30]">LISTE DES CLIENTS</h2>
@@ -266,15 +270,21 @@ export default function Listclient() {
                                     <td className="py-3 px-6 text-center">{data.contact}</td>
                                     <td className="py-3 px-6 text-right flex space-x-2">
                                         {/* Bouton pour afficher/masquer les autres boutons */}
-                                        <button className="flex items-center bg-[#293855] text-white px-2 py-1 rounded hover:bg-gray-600" onClick={toggleButtons}>...</button>
+                                        <button className="flex items-center bg-[#293855] text-white px-2 py-1 rounded hover:bg-gray-600"
+                                            onClick={() => toggleButtons(i)} // Passer l'index de la ligne
+                                        >
+                                            ...
+                                        </button>
 
                                         {/* Affichage conditionnel des boutons */}
-                                        {showButtons && (
+                                        {activeRowIndex === i && (
                                             <div className="flex space-x-2"> {/* Conteneur flex avec espacement */}
-                                                <button className="flex items-center bg-[#246bfd] text-white px-2 py-1 rounded hover:bg-[#30a0e0]" onClick={() => openEditModal(data)}>
+                                                <button className="flex items-center bg-[#246bfd] text-white px-2 py-1 rounded hover:bg-[#30a0e0]"
+                                                    onClick={() => openEditModal(data)}>
                                                     <Pencil className="mr-1" /> {/* Icône pour Modifier */}
                                                 </button>
-                                                <button className="flex items-center bg-[#E95354] text-white px-2 py-1 rounded hover:bg-red-600" onClick={() => handleDelete(data.numChrono)}>
+                                                <button className="flex items-center bg-[#E95354] text-white px-2 py-1 rounded hover:bg-red-600"
+                                                    onClick={() => handleDelete(data.numChrono)}>
                                                     <Trash className="mr-1" /> {/* Icône pour Supprimer */}
                                                 </button>
                                             </div>

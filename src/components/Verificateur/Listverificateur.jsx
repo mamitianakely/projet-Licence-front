@@ -201,7 +201,7 @@ export default function Listverificateur() {
 
                     <table className="min-w-full bg-white shadow-md rounded-lg">
                         <thead>
-                            <tr className="bg-[#61cbff] text-gray-900 uppercase text-sm leading-normal">
+                            <tr className="bg-[#209CFF] text-gray-900 uppercase text-sm leading-normal">
                                 <th className="py-3 px-6 text-center">Numero du verificateur</th>
                                 <th className="py-3 px-6 text-center">Nom du verificateur</th>
                                 <th className="py-3 px-6 text-center">Date de Descente</th>
