@@ -273,14 +273,24 @@ export default function Listdemande() {
         }
     };
 
-    //modifier demande
     const handleEditSubmit = async (event) => {
         event.preventDefault();
         try {
-            await axios.put(`http://localhost:5000/api/demandes/${formState.numDemande}`, formState);
-            setDemande(demande.map(d => d.numDemande === formState.numDemande ? formState : d));
+            const response = await axios.put(
+                `http://localhost:5000/api/demandes/${formState.numDemande}`, 
+                formState
+            );
+    
+            // Récupérer les données mises à jour depuis le backend
+            const updatedDemande = response.data;
+    
+            // Mettre à jour l'état avec les données renvoyées par le backend
+            setDemande(demande.map(d => 
+                d.numDemande === updatedDemande.numDemande ? updatedDemande : d
+            ));
+    
             closeModal();
-            toast.success('Demande modifié avec succès!', {
+            toast.success('Demande modifiée avec succès!', {
                 position: "top-right",
                 autoClose: 3000,
                 hideProgressBar: false,
@@ -289,7 +299,7 @@ export default function Listdemande() {
                 draggable: true,
                 progress: undefined,
                 theme: "colored"
-            })
+            });
         } catch (err) {
             console.error(err);
             toast.error("Erreur lors de la modification de la demande.", {
@@ -304,6 +314,7 @@ export default function Listdemande() {
             });
         }
     };
+    
 
     //filtrer demande
     const filteredDemande = demande.filter((data) => {
@@ -451,7 +462,7 @@ export default function Listdemande() {
                         {Array.isArray(currentDemandes) && currentDemandes.map((data, i) => (
 
                             <tr key={i} className="border-t">
-                                <td className="py-3 px-6 text-center">{data.hasDevis && <span className="text-blue-500 text-lg">●</span>}    {data.numDemande}</td>
+                                <td className="py-3 px-6 text-center">{data.hasDevis && <span className="text-blue-500 text-lg">●</span>}{data.numDemande}</td>
                                 <td className="py-3 px-6 text-center">{data.nomClient}</td>
                                 <td className="py-3 px-6 text-center">{formatDate(data.dateDemande)}</td>
                                 <td className="py-3 px-6 text-center">{data.typeDemande}</td>

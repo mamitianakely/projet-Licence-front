@@ -562,26 +562,24 @@ export default function Dash() {
                     </div>
 
                     {/* Statistiques des Demandes */}
-                    <div className="flex space-x-3">
-                        {/* Doughnut Chart for Demands by Devis State */}
-                        <div className="bg-white p-4 rounded-lg shadow-md flex-1">
-                            <h3 className="text-sm font-bold text-[#032f30] mb-3">Demandes par État de Devis</h3>
-                            <div style={{ height: "75%" }}>
-                                <Doughnut data={demandesParEtatDevis} options={option} />
-                            </div>
-                        </div>
-                    </div>
+                    <div className="flex space-x-4">
+    {/* Doughnut Chart for Demands by Devis State */}
+    <div className="bg-white p-4 rounded-lg shadow-md flex-1">
+        <h3 className="text-sm font-bold text-[#032f30] mb-3">Demandes par État de Devis</h3>
+        <div style={{ height: "75%" }}>
+            <Doughnut data={demandesParEtatDevis} options={option} />
+        </div>
+    </div>
 
+    {/* Reports Submitted */}
+    <div className="bg-white p-3 rounded-md shadow-sm border border-cyan-200 flex-1">
+        <h2 className="text-sm font-bold text-[#032f30] mb-3">Taux d'Approbation de demande en permis</h2>
+        <div style={{ height: "75%" }}>
+            <Pie data={data} options={{ maintainAspectRatio: false }} />
+        </div>
+    </div>
+</div>
 
-                    {/* Reports Submitted */}
-                    <div className="bg-white p-3 rounded-md shadow-sm border border-cyan-200">
-                        <h2 className="text-sm font-bold text-[#032f30] mb-3">Taux d'Approbation de demande en permis</h2>
-
-                        <div style={{ height: "75%" }}>
-                            <Pie data={data} options={{ maintainAspectRatio: false }} />
-                        </div>
-
-                    </div>
                 </div>
             </Dashboard >
         </div >

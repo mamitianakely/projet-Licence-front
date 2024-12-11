@@ -14,7 +14,7 @@ export default function Listdevis() {
     const [searchTerm, setSearchTerm] = useState('');
     const [modalIsOpen, setModalIsOpen] = useState(false);
     const [currentPage, setCurrentPage] = useState(1);
-    const itemsPerPage = 4;
+    const itemsPerPage = 3;
 
     const [activeRowIndex, setActiveRowIndex] = useState(null);
 
@@ -286,8 +286,8 @@ export default function Listdevis() {
                         <tr className="bg-[#209CFF] text-gray-900 uppercase text-sm leading-normal">
                             <th className="py-3 px-6 text-center">N° DE DEVIS</th>
                             <th className="py-3 px-6 text-center">NOM DU CLIENT</th>
-                            <th className="py-3 px-6 text-center">PRIX POUR LA LONGUEUR</th>
-                            <th className="py-3 px-6 text-center">PRIX POUR LA LARGEUR</th>
+                            <th className="py-3 px-6 text-center">PRIX DE LA LONGUEUR</th>
+                            <th className="py-3 px-6 text-center">PRIX DE LA LARGEUR</th>
                             <th className="py-3 px-6 text-center">MONTANT A PAYER</th>
                             <th className="py-3 px-6 text-center">ETAT</th>
                             <th className="py-3 px-6 text-center"></th>
@@ -296,7 +296,7 @@ export default function Listdevis() {
                     <tbody>
                         {Array.isArray(currentDevis) && currentDevis.map((data, i) => (
                             <tr key={i} className="border-t">
-                                <td className="py-3 px-6 text-center">{data.hasPermis && <span className="text-blue-500 text-lg">●</span>} {data.numDevis}</td>
+                                <td className="py-3 px-6 text-center">{data.hasPermis && <span className="text-blue-500 text-lg">●</span>}{data.numDevis}</td>
                                 <td className="py-3 px-6 text-center">{data.nomClient}</td>
                                 <td className="py-3 px-6 text-center">{data.prixLongueur}</td>
                                 <td className="py-3 px-6 text-center">{data.prixLargeur}</td>
