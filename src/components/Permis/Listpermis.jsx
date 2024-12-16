@@ -4,6 +4,8 @@ import Dashboard from "../Dashboard/Dashboard";
 import { Trash, FileText, Search, RefreshCcw } from 'lucide-react';
 import { confirmAlert } from "react-confirm-alert";
 import "react-confirm-alert/src/react-confirm-alert.css";
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 
 export default function Listpermis() {
@@ -97,14 +99,55 @@ export default function Listpermis() {
     // };
 
     const handleDelete = async (numPermis) => {
-        try {
-            const response = await axios.delete(`http://localhost:5000/api/permis/${numPermis}`);
-            console.log(response.data);
-            // Actualiser la liste des permis après suppression
-            setPermis(prevPermis => prevPermis.filter(permis => permis.numPermis !== numPermis));
-        } catch (error) {
-            console.error('Erreur lors de la suppression du permis:', error);
-        }
+        confirmAlert({
+            title: "Confirmation de suppression",
+            message: "Voulez-vous vraiment supprimer ce permis ?",
+            buttons: [
+                {
+                    label: "Oui",
+                    onClick: async () => {
+                        try {
+                            await axios.delete(`http://localhost:5000/api/permis/${numPermis}`);
+                            // Mettre à jour l'état local pour supprimer l'avis supprimé
+                            setPermis(prevPermis => prevPermis.filter(permis => permis.numPermis !== numPermis));
+                            // Mettre à jour l'interface après suppression
+
+                            // Afficher une notification de succès
+                            toast.success('Permus supprimé avec succès!', {
+                                position: "top-right",
+                                autoClose: 3000,
+                                hideProgressBar: false,
+                                closeOnClick: true,
+                                pauseOnHover: true,
+                                draggable: true,
+                                progress: undefined,
+                                theme: "colored"
+                            });
+
+                        } catch (error) {
+                            console.error(error);
+                            toast.error('Erreur lors de la suppression. Veuillez réessayer.', {
+                                position: "top-right",
+                                autoClose: 3000,
+                                hideProgressBar: false,
+                                closeOnClick: true,
+                                pauseOnHover: true,
+                                draggable: true,
+                                progress: undefined,
+                                theme: "colored"
+                            });
+                        }
+                    },
+                },
+                {
+                    label: "Non",
+                    onClick: () => console.log("Suppression annulée")
+                }
+            ],
+            overlayClassName: "custom-overlay",
+            className: "custom-ui",
+        });
+
     };
 
 

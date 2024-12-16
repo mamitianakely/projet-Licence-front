@@ -162,7 +162,16 @@ export default function Listdevis() {
                 numQuittance: numQuittance,
                 datePermis: datePermis
             });
-            toast.success("Permis enregistré avec succès!");
+            toast.success("Permis enregistré avec succès!", {
+                position: "top-right",
+                autoClose: 3000,
+                hideProgressBar: false,
+                closeOnClick: true,
+                pauseOnHover: true,
+                draggable: true,
+                progress: undefined,
+                theme: "colored"
+            });
             closeModal();
         } catch (err) {
             console.error("Erreur lors de la soumission du permis:", err);

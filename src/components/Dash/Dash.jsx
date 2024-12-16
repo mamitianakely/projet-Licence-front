@@ -456,7 +456,7 @@ export default function Dash() {
                     {/* Statistics Cards Section */}
                     <div className="grid grid-cols-2 gap-3 flex-1">
                         {/* Total Devis */}
-                        <div className="bg-gradient-to-r from-[#68e0cf] to-[#209cff] p-3 h-55 rounded-lg text-center">
+                        <div className="bg-white p-3 h-55 rounded-lg text-center">
                             <h3 className="text-lg font-bold text-gray-800 mb-3 mt-2">Devis et permis</h3>
                             <p className="text-2xs text-gray-600">Total des devis : <span className="font-semibold text-gray-700">{totalDevis}</span></p>
                             <p className="text-2xs text-gray-600">Total des permis : <span className="font-semibold text-gray-700">{totalPermis}</span></p>
@@ -465,7 +465,7 @@ export default function Dash() {
 
 
                         {/* Montant des devis */}
-                        <div className="bg-gradient-to-r from-[#2f5cff] to-[#dbf4ff] p-4 rounded-lg shadow-md text-center">
+                        <div className="bg-white p-4 rounded-lg shadow-md text-center">
                             <h3 className="text-lg font-bold text-[#023336] mb-3 mt-2">Montant des devis</h3>
 
                             {/* Montant avec icône Dollar */}
@@ -491,7 +491,7 @@ export default function Dash() {
 
 
                         {/* Statistics Cards Section */}
-                        <div className="bg-gradient-to-r from-[#2f5cff] to-[#dbf4ff] p-6 rounded-lg shadow-lg">
+                        <div className="bg-white p-6 rounded-lg shadow-lg">
                             <h2 className="text-lg font-semibold text-[#023336] text-center mb-4 mt-6">Répartition des Clients par Quartier</h2>
 
 
@@ -532,7 +532,7 @@ export default function Dash() {
 
                         {/* Clients sans demande et demandes sans devis */}
                         {/* Clients sans demande et demandes sans devis */}
-                        <div className="bg-gradient-to-r from-[#68e0cf] to-[#209cff] p-4 rounded-lg shadow-md text-center">
+                        <div className="bg-white p-4 rounded-lg shadow-md text-center">
                             <h3 className="text-lg font-bold text-gray-800 mb-3 mt-2">Client et demande</h3>
                             <p className="text-2xs text-gray-700">
                                 Total Clients : <span className="font-bold text-indigo-600">{totalClients}</span>
@@ -562,23 +562,23 @@ export default function Dash() {
                     </div>
 
                     {/* Statistiques des Demandes */}
-                    <div className="flex space-x-4">
-    {/* Doughnut Chart for Demands by Devis State */}
-    <div className="bg-white p-4 rounded-lg shadow-md flex-1">
-        <h3 className="text-sm font-bold text-[#032f30] mb-3">Demandes par État de Devis</h3>
-        <div style={{ height: "75%" }}>
-            <Doughnut data={demandesParEtatDevis} options={option} />
-        </div>
-    </div>
 
-    {/* Reports Submitted */}
-    <div className="bg-white p-3 rounded-md shadow-sm border border-cyan-200 flex-1">
-        <h2 className="text-sm font-bold text-[#032f30] mb-3">Taux d'Approbation de demande en permis</h2>
-        <div style={{ height: "75%" }}>
-            <Pie data={data} options={{ maintainAspectRatio: false }} />
-        </div>
-    </div>
-</div>
+                    {/* Doughnut Chart for Demands by Devis State */}
+                    <div className="bg-white p-4 rounded-lg shadow-md flex-1">
+                        <h3 className="text-sm font-bold text-[#032f30] mb-3">Demandes par État de Devis</h3>
+                        <div style={{ height: "75%" }}>
+                            <Doughnut data={demandesParEtatDevis} options={option} />
+                        </div>
+                    </div>
+
+                    {/* Reports Submitted */}
+                    <div className="bg-white p-3 rounded-md shadow-sm border border-cyan-200 flex-1">
+                        <h2 className="text-sm font-bold text-[#032f30] mb-3">Taux d'Approbation de demande en permis</h2>
+                        <div style={{ height: "75%" }}>
+                            <Pie data={data} options={{ maintainAspectRatio: false }} />
+                        </div>
+                    </div>
+
 
                 </div>
             </Dashboard >
